@@ -223,7 +223,6 @@ public class OrderController {
         if (lMeta.getTotalOrderCount() == 0) {
             throw new DataNotFoundException("data not found in database with given search term");
         } else {
-            System.out.println("Success");
             return lOrderResponseData;
         }
     }
