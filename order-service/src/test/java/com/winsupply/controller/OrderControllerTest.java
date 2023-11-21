@@ -6,7 +6,6 @@ import com.winsupply.entity.Order;
 import com.winsupply.model.OrderLineRequest;
 import com.winsupply.model.OrderRequest;
 import com.winsupply.model.response.OrderResponse;
-import com.winsupply.model.response.OrderResponseData;
 import com.winsupply.service.OrderService;
 import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
@@ -64,7 +63,7 @@ class OrderControllerTest {
     private WebApplicationContext mWebApplicationContext;
 
     /**
-     * Initiates init() before executing every method
+     * Initiates this method before executing every method
      */
     @BeforeEach
     void init() {
@@ -203,7 +202,7 @@ class OrderControllerTest {
         String lSortBy = "orderId";
         String lSortOrder = "asc";
 
-        Page<Order> lpageOrder = new PageImpl(new ArrayList<Order>());
+        Page<Order> lpageOrder = new PageImpl<>(new ArrayList<Order>());
         when(mOrderService.getAllOrdersByPagination(lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenReturn(lpageOrder);
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.add("page", lPageNo.toString());
@@ -239,7 +238,7 @@ class OrderControllerTest {
     }
 
     /**
-     * This method tests to check wheather all orders is finded with given search
+     * This method tests to check whether all orders is founded with given search
      * term and other fields
      */
     @Test
@@ -250,7 +249,7 @@ class OrderControllerTest {
         String lSortBy = "orderId";
         String lSortOrder = "asc";
 
-        Page<Order> lpageOrder = new PageImpl(new ArrayList<Order>());
+        Page<Order> lpageOrder = new PageImpl<>(new ArrayList<Order>());
         when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenReturn(lpageOrder);
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.add("searchTerm", lSearchTerm);
@@ -264,7 +263,7 @@ class OrderControllerTest {
     }
 
     /**
-     * This method tests to check wheather all orders is finded with given search
+     * This method tests to check weather all orders is founded with given search
      * term else throwing exception
      */
     @Test
@@ -275,7 +274,6 @@ class OrderControllerTest {
         String lSortBy = "orderLineId";
         String lSortOrder = "asc";
 
-        OrderResponseData lOrderResponseData = new OrderResponseData();
         when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder))
                 .thenThrow(ConstraintViolationException.class);
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();

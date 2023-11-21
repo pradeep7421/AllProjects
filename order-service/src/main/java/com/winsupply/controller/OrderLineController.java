@@ -46,7 +46,7 @@ public class OrderLineController {
     }
 
     /**
-     * Endpoint to create new orderLines
+     * EndPoint to create new orderLines
      *
      * @param pOrderLinesRequest - The request containing List of orderLine
      *                           information

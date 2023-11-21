@@ -98,16 +98,13 @@ public class OrderService {
             OrderResponse lOrderResponse = getOrderResponse(lGetOrder);
 
             List<OrderLineResponse> lOrderLinesResponse = createOrderLineResponse(lOrderLinesList);
-
             lOrderResponse.setOrderLinesResponseList(lOrderLinesResponse);
 
             mLogger.info("Exiting getOrderDetails method");
 
             return lOrderResponse;
         } else {
-
             mLogger.debug("Exiting getOrderDetails method");
-
             throw new DataNotFoundException("Order details not found");
         }
     }
@@ -154,7 +151,6 @@ public class OrderService {
         Page<Order> lPageOrder = mOrderRepository.findAll(lPageable);
 
         return lPageOrder;
-
     }
 
     /**
