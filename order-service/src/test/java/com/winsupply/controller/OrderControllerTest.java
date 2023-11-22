@@ -1,15 +1,14 @@
 package com.winsupply.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winsupply.entity.Order;
 import com.winsupply.model.OrderLineRequest;
 import com.winsupply.model.OrderRequest;
-import com.winsupply.model.response.OrderResponse;
 import com.winsupply.service.OrderService;
 import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -63,20 +62,25 @@ class OrderControllerTest {
     private WebApplicationContext mWebApplicationContext;
 
     /**
+     * mObjectMapper - the ObjectMapper
+     */
+    ObjectMapper mObjectMapper;
+
+    /**
      * Initiates this method before executing every method
      */
     @BeforeEach
     void init() {
         mMockMvc = MockMvcBuilders.webAppContextSetup(mWebApplicationContext).build();
+        mObjectMapper = new ObjectMapper();
     }
 
     /**
      * Tests a new order based on the provided order request
      * @throws Exception
-     * @throws JsonProcessingException
      */
     @Test
-    void testCreateOrder() throws JsonProcessingException, Exception {
+    void testCreateOrder() throws Exception, Exception {
         OrderRequest lOrderRequest = new OrderRequest();
         lOrderRequest.setOrderName("new order");
         lOrderRequest.setAmount(10.10);
@@ -85,7 +89,6 @@ class OrderControllerTest {
         OrderLineRequest lOrderLineRequest = new OrderLineRequest();
         lOrderLineRequest.setItemName("gold");
         lOrderLineRequest.setQuantity(10);
-
         lOrderLines.add(lOrderLineRequest);
 
         lOrderRequest.setOrderLines(lOrderLines);
@@ -93,24 +96,46 @@ class OrderControllerTest {
         Mockito.doNothing().when(mOrderService).createOrder(lOrderRequest);
 
         mMockMvc.perform(MockMvcRequestBuilders.post("/orders").contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isCreated());
-
+                .content(mObjectMapper.writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isCreated());
     }
 
     /**
-     * Tests a new order based on the provided order request and throws Exception if
+     * Tests a new order based on the provided empty or invalid order request and throws Exception if
      * not created
      */
     @Test
-    void testCreateOrderWithEmptyFields() throws Exception {
+    void testCreateOrder_WithEmptyOrInvalidOrderFields() throws Exception {
         OrderRequest lOrderRequest = new OrderRequest();
-        lOrderRequest.setOrderName("order1 ");
-        lOrderRequest.setAmount(10.00);
+
+        List<OrderLineRequest> lOrderLinesRequest = new ArrayList<OrderLineRequest>();
+        OrderLineRequest lOrderLineRequest = new OrderLineRequest();
+        lOrderLineRequest.setItemName("Diamond");
+        lOrderLineRequest.setQuantity(20);
+        lOrderLinesRequest.add(lOrderLineRequest);
+
+        lOrderRequest.setOrderLines(lOrderLinesRequest);
 
         Mockito.doNothing().when(mOrderService).createOrder(lOrderRequest);
 
         mMockMvc.perform(MockMvcRequestBuilders.post("/orders").contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isBadRequest());
+                .content(mObjectMapper.writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
+     * Tests a new order based on the provided with empty or invalid order Line request and throws Exception if
+     * not created
+     */
+    @Test
+    void testCreateOrder_WithEmptyOrInvalidOrderLinesFields() throws Exception {
+        OrderRequest lOrderRequest = new OrderRequest();
+        lOrderRequest.setOrderName("order1 ");
+        lOrderRequest.setAmount(10.00);
+        lOrderRequest.setOrderLines(new ArrayList<OrderLineRequest>());
+
+        Mockito.doNothing().when(mOrderService).createOrder(lOrderRequest);
+
+        mMockMvc.perform(MockMvcRequestBuilders.post("/orders").contentType(MediaType.APPLICATION_JSON)
+                .content(mObjectMapper.writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     /**
@@ -119,14 +144,12 @@ class OrderControllerTest {
     @Test
     void testGetOrderDetails() throws Exception {
         int lOrderId = 1;
-        OrderResponse lOrderResponse = new OrderResponse();
 
-        when(mOrderService.getOrderDetails(lOrderId)).thenReturn(lOrderResponse);
+        when(mOrderService.getOrderDetails(lOrderId)).thenReturn(java.util.Optional.of(new Order()));
 
         mMockMvc.perform(
                 MockMvcRequestBuilders.get("/orders/{orderId}", lOrderId).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk());
-
     }
 
     /**
@@ -134,10 +157,10 @@ class OrderControllerTest {
      * incorrect OrderId
      */
     @Test
-    void testGetOrderDetailsWithWrongOrderId() throws Exception {
+    void testGetOrderDetails_WithWrongOrderId() throws Exception {
         int lOrderId = 14545;
-        OrderResponse lOrderResponse = new OrderResponse();
-        when(mOrderService.getOrderDetails(lOrderId)).thenReturn(lOrderResponse);
+
+        when(mOrderService.getOrderDetails(lOrderId)).thenReturn(Optional.empty());
 
         mMockMvc.perform(
                 MockMvcRequestBuilders.get("/orders/{orderId}", lOrderId).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
@@ -157,14 +180,13 @@ class OrderControllerTest {
         mMockMvc.perform(
                 MockMvcRequestBuilders.put("/orders/{orderId}/orderLines/{orderLineId}/quantity/{quantity}", lOrderId, lOrderLineId, lQuantity))
                 .andExpect(MockMvcResultMatchers.status().isOk());
-
     }
 
     /**
      * Tests update Order Quantity based on the provided order Id ,orderLine Id and
      */
     @Test
-    void testUpdateOrderLineQuantityWithInvalidQuantity() throws Exception {
+    void testUpdateOrderLineQuantity_WithInvalidQuantity() throws Exception {
         int lOrderId = 1;
         int lOrderLineId = 2202;
         int lQuantity = 266;
@@ -173,14 +195,13 @@ class OrderControllerTest {
         mMockMvc.perform(
                 MockMvcRequestBuilders.put("/orders/{orderId}/orderLines/{orderLineId}/quantity/{quantity}", lOrderId, lOrderLineId, lQuantity))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
-
     }
 
     /**
      * This method tests with invalid OrderId or Invalid OrderLineId
      */
     @Test
-    void testUpdateOrderLineQuantityWithInvalidId() throws Exception {
+    void testUpdateOrderLineQuantity_WithInvalidOrderLineId() throws Exception {
         int lOrderId = 1;
         int lOrderLineId = 22022;
         int lQuantity = 2;
@@ -204,25 +225,25 @@ class OrderControllerTest {
 
         Page<Order> lpageOrder = new PageImpl<>(new ArrayList<Order>());
         when(mOrderService.getAllOrdersByPagination(lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenReturn(lpageOrder);
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("page", lPageNo.toString());
-        map.add("rpp", lResultsPerPage.toString());
-        map.add("sortBy", lSortBy);
-        map.add("sortOrder", lSortOrder);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
 
         mMockMvc.perform(
-                MockMvcRequestBuilders.get("/orders").queryParams(map).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+                MockMvcRequestBuilders.get("/orders").queryParams(lParam).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     /**
-     * This method tests to check for exception with invalid details
+     * This method tests to check for exception with invalid page number
      */
     @Test
-    void testgetOrdersByInvalidPagination() throws Exception {
-        Integer lPageNo = 1;
+    void testgetOrdersByPagination_InvalidPageNo() throws Exception {
+        Integer lPageNo = -1;
         Integer lResultsPerPage = 2;
-        String lSortBy = "orderLineId";
+        String lSortBy = "orderId";
         String lSortOrder = "asc";
 
         when(mOrderService.getAllOrdersByPagination(lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenThrow(ConstraintViolationException.class);
@@ -238,8 +259,74 @@ class OrderControllerTest {
     }
 
     /**
+     * This method tests to check for exception with invalid results per page
+     */
+    @Test
+    void testgetOrdersByPagination_InvalidResultsPerPage() throws Exception {
+        Integer lPageNo = 1;
+        Integer lResultsPerPage = -2;
+        String lSortBy = "orderId";
+        String lSortOrder = "asc";
+
+        when(mOrderService.getAllOrdersByPagination(lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenThrow(ConstraintViolationException.class);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
+
+        mMockMvc.perform(
+                MockMvcRequestBuilders.get("/orders").queryParams(lParam).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
+     * This method tests to check for exception with invalid sort by
+     */
+    @Test
+    void testgetOrdersByPagination_InvalidSortBy() throws Exception {
+        Integer lPageNo = 1;
+        Integer lResultsPerPage = 2;
+        String lSortBy = "orderLineId";
+        String lSortOrder = "asc";
+
+        when(mOrderService.getAllOrdersByPagination(lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenThrow(ConstraintViolationException.class);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
+
+        mMockMvc.perform(
+                MockMvcRequestBuilders.get("/orders").queryParams(lParam).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
+     * This method tests to check for exception with invalid sort order
+     */
+    @Test
+    void testgetOrdersByPagination_InvalidSortOrder() throws Exception {
+        Integer lPageNo = 1;
+        Integer lResultsPerPage = 2;
+        String lSortBy = "orderLineId";
+        String lSortOrder = "increasing";
+
+        when(mOrderService.getAllOrdersByPagination(lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenThrow(ConstraintViolationException.class);
+        MultiValueMap<String, String> mlParam = new LinkedMultiValueMap<>();
+        mlParam.add("page", lPageNo.toString());
+        mlParam.add("rpp", lResultsPerPage.toString());
+        mlParam.add("sortBy", lSortBy);
+        mlParam.add("sortOrder", lSortOrder);
+
+        mMockMvc.perform(
+                MockMvcRequestBuilders.get("/orders").queryParams(mlParam).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
      * This method tests to check whether all orders is founded with given search
-     * term and other fields
+     * term
      */
     @Test
     void testgetAllOrdersBySearch() throws Exception {
@@ -251,23 +338,98 @@ class OrderControllerTest {
 
         Page<Order> lpageOrder = new PageImpl<>(new ArrayList<Order>());
         when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder)).thenReturn(lpageOrder);
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("searchTerm", lSearchTerm);
-        map.add("page", lPageNo.toString());
-        map.add("rpp", lResultsPerPage.toString());
-        map.add("sortBy", lSortBy);
-        map.add("sortOrder", lSortOrder);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("searchTerm", lSearchTerm);
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
 
-        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(map).contentType(MediaType.APPLICATION_JSON)
+        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(lParam).contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     /**
-     * This method tests to check weather all orders is founded with given search
-     * term else throwing exception
+     * This method tests to get all orders with given blank search term and throwing
+     * exception
      */
     @Test
-    void testgetAllOrdersBySearch_InvalidSortBy() throws Exception {
+    void testGetAllOrdersBySearch_WithBlankSearchTerm() throws Exception {
+        String lSearchTerm = "";
+        Integer lPageNo = 1;
+        Integer lResultsPerPage = 2;
+        String lSortBy = "orderId";
+        String lSortOrder = "asc";
+
+        when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder))
+                .thenThrow(ConstraintViolationException.class);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("searchTerm", lSearchTerm);
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
+
+        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(lParam).contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
+     * This method tests to get all orders with invalid page no and throwing
+     * exception
+     */
+    @Test
+    void testGetAllOrdersBySearch_WithInvalidPageNo() throws Exception {
+        String lSearchTerm = "1";
+        Integer lPageNo = -1;
+        Integer lResultsPerPage = 2;
+        String lSortBy = "orderId";
+        String lSortOrder = "asc";
+
+        when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder))
+                .thenThrow(ConstraintViolationException.class);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("searchTerm", lSearchTerm);
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
+
+        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(lParam).contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
+     * This method tests to get all orders with invalid results per page and
+     * throwing exception
+     */
+    @Test
+    void testGetAllOrdersBySearch_WithInvalidResultsPerPage() throws Exception {
+        String lSearchTerm = "1";
+        Integer lPageNo = 1;
+        Integer lResultsPerPage = -2;
+        String lSortBy = "orderId";
+        String lSortOrder = "asc";
+
+        when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder))
+                .thenThrow(ConstraintViolationException.class);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("searchTerm", lSearchTerm);
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
+
+        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(lParam).contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
+     * This method tests to get all orders with invalid sort by and throwing
+     * exception
+     */
+    @Test
+    void testGetAllOrdersBySearch_WithInvalidSortBy() throws Exception {
         String lSearchTerm = "1";
         Integer lPageNo = 1;
         Integer lResultsPerPage = 2;
@@ -276,14 +438,39 @@ class OrderControllerTest {
 
         when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder))
                 .thenThrow(ConstraintViolationException.class);
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("searchTerm", lSearchTerm);
-        map.add("page", lPageNo.toString());
-        map.add("rpp", lResultsPerPage.toString());
-        map.add("sortBy", lSortBy);
-        map.add("sortOrder", lSortOrder);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("searchTerm", lSearchTerm);
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
 
-        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(map).contentType(MediaType.APPLICATION_JSON)
+        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(lParam).contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    /**
+     * This method tests to get all orders with invalid sort order and throwing
+     * exception
+     */
+    @Test
+    void testGetAllOrdersBySearch_WithInvalidSortOrder() throws Exception {
+        String lSearchTerm = "1";
+        Integer lPageNo = 1;
+        Integer lResultsPerPage = 2;
+        String lSortBy = "orderId";
+        String lSortOrder = "increasing";
+
+        when(mOrderService.getAllOrdersBySearch(lSearchTerm, lPageNo - 1, lResultsPerPage, lSortBy, lSortOrder))
+                .thenThrow(ConstraintViolationException.class);
+        MultiValueMap<String, String> lParam = new LinkedMultiValueMap<>();
+        lParam.add("searchTerm", lSearchTerm);
+        lParam.add("page", lPageNo.toString());
+        lParam.add("rpp", lResultsPerPage.toString());
+        lParam.add("sortBy", lSortBy);
+        lParam.add("sortOrder", lSortOrder);
+
+        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/search").queryParams(lParam).contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 

@@ -3,8 +3,8 @@ package com.winsupply.controller;
 import com.winsupply.builder.OrderResponseBuilder;
 import com.winsupply.entity.Order;
 import com.winsupply.model.OrderRequest;
+import com.winsupply.model.response.MetaData;
 import com.winsupply.model.response.OrderResponse;
-import com.winsupply.model.response.OrderResponseData;
 import com.winsupply.model.response.SuccessResponse;
 import com.winsupply.service.OrderService;
 import jakarta.validation.Valid;
@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -85,7 +86,8 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public ResponseEntity<Object> getOrderDetails(@NotNull @Min(value = 1) @PathVariable("orderId") int pOrderId) {
         mLogger.info("Order Id -> pOrderId: {}", pOrderId);
-        OrderResponse lOrderResponse = mOrderService.getOrderDetails(pOrderId);
+        Optional<Order> lOrderOptional = mOrderService.getOrderDetails(pOrderId);
+        OrderResponse lOrderResponse = mOrderResponseBuilder.createOrderResponseForGet(lOrderOptional);
         mLogger.debug("exiting getOrderDetails method");
         return ResponseEntity.status(HttpStatus.OK).body(lOrderResponse);
     }
@@ -123,7 +125,7 @@ public class OrderController {
      */
     @GetMapping
     public ResponseEntity<Object> getAllOrdersByPagination(@RequestParam(name = "page", defaultValue = "1") @Min(1) Integer pPageNo,
-            @RequestParam(name = "rpp", defaultValue = "10") Integer pResultsPerPage,
+            @RequestParam(name = "rpp", defaultValue = "10") @Min(0) Integer pResultsPerPage,
             @RequestParam(name = "sortBy", defaultValue = "orderId") @Pattern(regexp = "^(orderId|amount|orderName)$") String pSortBy,
             @RequestParam(name = "sortOrder", defaultValue = "asc") @Pattern(regexp = "^(asc|desc)$") String pSortOrder) {
 
@@ -131,14 +133,9 @@ public class OrderController {
 
         Page<Order> lPageOrder = mOrderService.getAllOrdersByPagination(pPageNo - 1, pResultsPerPage, pSortBy, pSortOrder);
 
-//        if (lTotalOrderCount == 0) {
-//            mLogger.debug("Exiting getAllOrdersByPagination method");
-//            throw new DataNotFoundException("Data is not available in database");
-//        } else {
-        OrderResponseData lOrderResponseData = mOrderResponseBuilder.createOrderResponseData(lPageOrder.getTotalElements(), lPageOrder.getContent());
+        MetaData lMetaData = mOrderResponseBuilder.createMetaDataByPagination(lPageOrder);
+        return ResponseEntity.status(HttpStatus.OK).body(lMetaData);
 
-        return ResponseEntity.status(HttpStatus.OK).body(lOrderResponseData);
-//        }
     }
 
     /**
@@ -159,14 +156,13 @@ public class OrderController {
     public ResponseEntity<Object> getAllOrdersBySearch(
             @RequestParam(name = "searchTerm") @NotBlank(message = "Search term must not be blank") String pSearchTerm,
             @RequestParam(name = "page", defaultValue = "1") @Min(1) Integer pPageNo,
-            @RequestParam(name = "rpp", defaultValue = "10") Integer pResultsPerPage,
+            @RequestParam(name = "rpp", defaultValue = "10") @Min(0) Integer pResultsPerPage,
             @RequestParam(name = "sortBy", defaultValue = "orderId") @Pattern(regexp = "^(orderId|amount|orderName)$") String pSortBy,
             @RequestParam(name = "sortOrder", defaultValue = "asc") @Pattern(regexp = "^(asc|desc)$") String pSortOrder) {
         mLogger.info("Query Parameter -> SearchTerm:{}, PageNo: {},ResultsPerPage: {},SortBy: {},SortOrder", pSearchTerm, pPageNo, pResultsPerPage,
                 pSortBy, pSortOrder);
         Page<Order> lPageOrders = mOrderService.getAllOrdersBySearch(pSearchTerm, pPageNo - 1, pResultsPerPage, pSortBy, pSortOrder);
-        OrderResponseData lOrderResponseData = mOrderResponseBuilder.createOrderResponseDataSearch(lPageOrders.getTotalElements(),
-                lPageOrders.getContent());
-        return ResponseEntity.status(HttpStatus.OK).body(lOrderResponseData);
+        MetaData lMetaData = mOrderResponseBuilder.createMetaDataBySearchTerm(lPageOrders);
+        return ResponseEntity.status(HttpStatus.OK).body(lMetaData);
     }
 }

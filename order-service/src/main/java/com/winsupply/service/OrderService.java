@@ -5,8 +5,6 @@ import com.winsupply.entity.OrderLine;
 import com.winsupply.globalexception.DataNotFoundException;
 import com.winsupply.model.OrderLineRequest;
 import com.winsupply.model.OrderRequest;
-import com.winsupply.model.response.OrderLineResponse;
-import com.winsupply.model.response.OrderResponse;
 import com.winsupply.repository.OrderLineRepository;
 import com.winsupply.repository.OrderRepository;
 import java.util.ArrayList;
@@ -62,7 +60,7 @@ public class OrderService {
 
         mLogger.debug("pOrderRequest -> Order Name: {}, Order Amount: {}", pOrderRequest.getOrderName(), pOrderRequest.getAmount());
 
-        Order lOrder = createOrderRequest(pOrderRequest);
+        Order lOrder = createOrderEntity(pOrderRequest);
 
         List<OrderLine> lOrderLines = createOrderlines(pOrderRequest, lOrder);
 
@@ -83,26 +81,14 @@ public class OrderService {
      *         not found
      */
     // TODO- @Transactional
-    public OrderResponse getOrderDetails(int pOrderId) {
+    public Optional<Order> getOrderDetails(int pOrderId) {
 
         mLogger.debug("pOrderId -> Order Id: {}", pOrderId);
 
         Optional<Order> lOrderOptional = mOrderRepository.findById(pOrderId);
 
         if (lOrderOptional.isPresent()) {
-
-            Order lGetOrder = lOrderOptional.get();
-            // TODO - build response in builder class and call it from controller.
-            List<OrderLine> lOrderLinesList = lGetOrder.getOrderLines();
-
-            OrderResponse lOrderResponse = getOrderResponse(lGetOrder);
-
-            List<OrderLineResponse> lOrderLinesResponse = createOrderLineResponse(lOrderLinesList);
-            lOrderResponse.setOrderLinesResponseList(lOrderLinesResponse);
-
-            mLogger.info("Exiting getOrderDetails method");
-
-            return lOrderResponse;
+            return lOrderOptional;
         } else {
             mLogger.debug("Exiting getOrderDetails method");
             throw new DataNotFoundException("Order details not found");
@@ -205,49 +191,13 @@ public class OrderService {
      * @param - pOrderRequest The OrderRequest object containing order details.
      * @return - An Order entity representing the order.
      */
-    private Order createOrderRequest(final OrderRequest pOrderRequest) {
+    private Order createOrderEntity(final OrderRequest pOrderRequest) {
         mLogger.debug("pOrderRequest -> Order Name: {}, Order Amount: {}", pOrderRequest.getOrderName(), pOrderRequest.getAmount());
         Order lOrder = new Order();
         lOrder.setAmount(pOrderRequest.getAmount());
         lOrder.setOrderName(pOrderRequest.getOrderName());
         mLogger.info("payload -> Order info: {}", lOrder);
         return lOrder;
-    }
-
-    /**
-     * returns an OrderResponse object based on the provided Order entity
-     *
-     * @param lGetOrder - The Order entity to be converted into an OrderResponse
-     * @return - An OrderResponse object representing the order's summary details
-     */
-    private OrderResponse getOrderResponse(final Order lGetOrder) {
-        OrderResponse lOrderResponse = new OrderResponse();
-
-        lOrderResponse.setOrderId(lGetOrder.getOrderId());
-        lOrderResponse.setOrderAmount(lGetOrder.getAmount());
-        lOrderResponse.setOrderName(lGetOrder.getOrderName());
-        return lOrderResponse;
-    }
-
-    /**
-     * creates a list of OrderLine entities to a list of OrderLineResponse DTOs.
-     *
-     * @param pOrderLines - A list of OrderLine entities to be converted into
-     *                    OrderLineResponse DTOs
-     * @return - A list of OrderLineResponse representing the summary details of
-     *         each order line
-     */
-    private List<OrderLineResponse> createOrderLineResponse(final List<OrderLine> pOrderLines) {
-        List<OrderLineResponse> lOrderLinesResponse = new ArrayList<>();
-
-        for (OrderLine lOrderLine : pOrderLines) {
-            OrderLineResponse lOrderLineResponse = new OrderLineResponse();
-            lOrderLineResponse.setOrderLineId(lOrderLine.getOrderLineId());
-            lOrderLineResponse.setItemName(lOrderLine.getItemName());
-            lOrderLineResponse.setQuantity(lOrderLine.getQuantity());
-            lOrderLinesResponse.add(lOrderLineResponse);
-        }
-        return lOrderLinesResponse;
     }
 
     /**

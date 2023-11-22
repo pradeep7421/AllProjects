@@ -11,7 +11,7 @@ import lombok.Data;
  */
 @Data
 @JsonInclude(Include.NON_NULL)
-public class OrderResponseData {
+public class MetaData {
     /**
      * The meta takes information from meta Object
      */

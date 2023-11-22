@@ -39,6 +39,11 @@ public class OrderLineControllerTest {
     OrderLineService mOrderLineService;
 
     /**
+     * mObjectMapper - the ObjectMapper
+     */
+    ObjectMapper mObjectMapper;
+
+    /**
      * mMockMvc - the MockMvc
      */
     @Mock
@@ -51,11 +56,12 @@ public class OrderLineControllerTest {
     private WebApplicationContext mWebApplicationContext;
 
     /**
-     * Initiates init() before executing every method
+     * Initiates this method before executing every method
      */
     @BeforeEach
     void init() {
         mMockMvc = MockMvcBuilders.webAppContextSetup(mWebApplicationContext).build();
+        mObjectMapper = new ObjectMapper();
     }
 
     /**
@@ -73,7 +79,7 @@ public class OrderLineControllerTest {
         Mockito.doNothing().when(mOrderLineService).createOrderLines(lOrderLinesRequest, lOrderId);
 
         mMockMvc.perform(MockMvcRequestBuilders.post("/lines").queryParam("orderId", lOrderId.toString())
-                .content(new ObjectMapper().writeValueAsString(lOrderLinesRequest)).contentType(MediaType.APPLICATION_JSON)
+                .content(mObjectMapper.writeValueAsString(lOrderLinesRequest)).contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());
     }
 
@@ -81,15 +87,14 @@ public class OrderLineControllerTest {
      * Tests a new order Line based on the provided order request with invalid body
      */
     @Test
-    void testCreateOrderLinesWithInvalidRequestBody() throws Exception {
+    void testCreateOrderLines_WithInvalidRequestBody() throws Exception {
         Integer lOrderId = 1;
         List<OrderLineRequest> lOrderLinesRequest = new ArrayList<>();
-        OrderLineRequest lOrderLineRequest = new OrderLineRequest();
 
         Mockito.doNothing().when(mOrderLineService).createOrderLines(lOrderLinesRequest, lOrderId);
 
         mMockMvc.perform(MockMvcRequestBuilders.post("/lines").queryParam("orderId", lOrderId.toString())
-                .content(new ObjectMapper().writeValueAsString(lOrderLinesRequest)).contentType(MediaType.APPLICATION_JSON)
+                .content(mObjectMapper.writeValueAsString(lOrderLinesRequest)).contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 

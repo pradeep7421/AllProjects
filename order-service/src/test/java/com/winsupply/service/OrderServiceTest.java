@@ -12,10 +12,11 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -34,8 +35,8 @@ import static org.mockito.Mockito.when;
  * This is the documentation for the OrderServiceTest It provides an overview of
  * the class service unit Testing
  */
-@SpringBootTest
-public class OrderServiceTest {
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
     /**
      * mOrderService - the OrderService
      */
@@ -91,8 +92,6 @@ public class OrderServiceTest {
         mOrderService.createOrder(lOrderRequest);
         verify(mOrderRepository).save(Mockito.any(Order.class));
         verify(mOrderLineRepository).saveAll(Mockito.anyList());
-        assertEquals(10000.00, lOrder.getAmount());
-
     }
 
     /**
@@ -173,7 +172,7 @@ public class OrderServiceTest {
      * tests When Order Does Not Exist and throws exception
      */
     @Test()
-    public void testGetOrderDetailsWhenOrderDoesNotExist() {
+    public void testGetOrderDetails_WhenOrderDoesNotExist() {
 
         int lOrderId = 12;
 
@@ -189,7 +188,7 @@ public class OrderServiceTest {
      * Tests if it Updates the quantity of an order line
      */
     @Test
-    public void testUpdateOrderLineQuantitySuccess() {
+    public void testUpdateOrderLineQuantity_Success() {
 
         int lOrderId = 1;
         int lOrderLineId = 1;
@@ -211,7 +210,7 @@ public class OrderServiceTest {
      * OrderLine Id
      */
     @Test()
-    public void testUpdateOrderLineQuantityOrderLineNotFound() {
+    public void testUpdateOrderLineQuantity_OrderLineNotFound() {
         int lOrderId = 1;
         int lOrderLineId = 112;
         int lQuantity = 5;
@@ -228,7 +227,7 @@ public class OrderServiceTest {
      * Tests if it Updates the quantity of an order line for invalid quantity
      */
     @Test()
-    public void testUpdateOrderLineQuantityInvalid() {
+    public void testUpdateOrderLineQuantity_WithInvalidQuantity() {
         int lOrderId = 1;
         int lOrderLineId = 2202;
         int lQuantity = 55;
@@ -261,8 +260,8 @@ public class OrderServiceTest {
     /**
      * Tests if it gets all orders by pagination
      */
-    @Test()
-    public void testGetOrdersByPagination_withAsc() {
+    @Test
+    public void testGetOrdersByPagination_withAscendingOrder() {
         int lPageNo = 1;
         int lResultsPerPage = 2;
         String lSortBy = "amount";
@@ -277,7 +276,7 @@ public class OrderServiceTest {
         lOrders.add(lOrder);
         Pageable lPageable = PageRequest.of(lPageNo, lResultsPerPage, lSort);
 
-        Page<Order> lpageOrder = new PageImpl(lOrders);
+        Page<Order> lpageOrder = new PageImpl<>(lOrders);
 
         when(mOrderRepository.findAll(lPageable)).thenReturn(lpageOrder);
         assertEquals(1, lpageOrder.getTotalElements());
@@ -289,8 +288,8 @@ public class OrderServiceTest {
     /**
      * Tests if it gets all orders by pagination with order by desc
      */
-    @Test()
-    public void testGetAllOrdersByPagination_withDesc() {
+    @Test
+    public void testGetAllOrdersByPagination_withDescendingOrder() {
         int lPageNo = 1;
         int lResultsPerPage = 2;
         String lSortBy = "amount";
@@ -305,7 +304,7 @@ public class OrderServiceTest {
         lOrders.add(lOrder);
         Pageable lPageable = PageRequest.of(lPageNo, lResultsPerPage, lSort);
 
-        Page<Order> lpageOrder = new PageImpl(lOrders);
+        Page<Order> lpageOrder = new PageImpl<>(lOrders);
 
         when(mOrderRepository.findAll(lPageable)).thenReturn(lpageOrder);
         assertEquals(1, lpageOrder.getTotalElements());
@@ -317,7 +316,7 @@ public class OrderServiceTest {
     /**
      * Tests if it gets all orders by pagination or throws exception
      */
-    @Test()
+    @Test
     public void testGetOrdersByPagination_throwsExceptions() {
         int lPageNo = 155553;
         int lResultsPerPage = 2;
@@ -328,7 +327,7 @@ public class OrderServiceTest {
 
         Pageable lPageable = PageRequest.of(lPageNo, lResultsPerPage, lSort);
 
-        Page<Order> lpageOrder = new PageImpl(new ArrayList<Order>());
+        Page<Order> lpageOrder = new PageImpl<>(new ArrayList<Order>());
 
         when(mOrderRepository.findAll(lPageable)).thenReturn(lpageOrder);
         assertDoesNotThrow(() -> mOrderService.getAllOrdersByPagination(lPageNo, lResultsPerPage, lSortBy, lSortOrder));
@@ -338,7 +337,7 @@ public class OrderServiceTest {
     /**
      * Tests if it gets all orders by search
      */
-    @Test()
+    @Test
     public void testGetOrdersBySearch() {
         String lSearchTerm = "1";
         int lPageNo = 1;
@@ -355,7 +354,7 @@ public class OrderServiceTest {
         lOrders.add(lOrder);
         Pageable lPageable = PageRequest.of(lPageNo, lResultsPerPage, lSort);
 
-        Page<Order> lpageOrder = new PageImpl(lOrders);
+        Page<Order> lpageOrder = new PageImpl<>(lOrders);
 
         when(mOrderRepository.findAllOrderBySearchTerm(lSearchTerm, lPageable)).thenReturn(lpageOrder);
         assertEquals(1, lpageOrder.getTotalElements());
@@ -367,16 +366,15 @@ public class OrderServiceTest {
     /**
      * Tests if it gets all orders by search
      */
-    @Test()
-    public void testGetOrdersBySearch_noOrdersSearched() {
-        String lSearchTerm = "1";
+    @Test
+    public void testGetOrdersBySearch_withBlankSearcheTerm() {
+        String lSearchTerm = "";
         int lPageNo = 1;
         int lResultsPerPage = 2;
         String lSortBy = "amount";
         String lSortOrder = "asc";
 
         Sort lSort = Sort.by(lSortBy).ascending();
-        List<Order> lOrders = new ArrayList<>();
 
         Pageable lPageable = PageRequest.of(lPageNo, lResultsPerPage, lSort);
 

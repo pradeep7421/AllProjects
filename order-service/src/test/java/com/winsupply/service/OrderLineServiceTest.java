@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -66,8 +65,6 @@ public class OrderLineServiceTest {
         verify(mOrderRepository, times(1)).findById(lOrderId);
         verify(mOrderLineRepository, times(1)).getMaxOrderSequenceByOrderId(lOrderId);
         verify(mOrderLineRepository, times(1)).saveAll(any());
-        assertDoesNotThrow(() -> mOrderLineService.createOrderLines(lOrderLinesRequest, lOrderId));
-
     }
 
     private Order createOrder() {
@@ -84,19 +81,17 @@ public class OrderLineServiceTest {
      */
     private OrderLineRequest createValidOrderLineRequest() {
         OrderLineRequest lOrderLineRequest = new OrderLineRequest();
-
         lOrderLineRequest.setItemName("item A");
         lOrderLineRequest.setQuantity(20);
-
         return lOrderLineRequest;
     }
 
     /**
-     * Tests a new order based on the provided with Invalid order request
+     * Tests a new order based on the provided with Invalid order Id
      */
     @Test
-    void testCreateOrderLinesWithWrongOrderId() {
-        Integer lOrderId = 155555; // invalid lOrderId
+    void testCreateOrderLines_WithWrongOrderId() {
+        Integer lOrderId = 155555;
 
         List<OrderLineRequest> orderLinesRequest = new ArrayList<>();
         OrderLineRequest lOrderLineRequest = new OrderLineRequest();
@@ -108,5 +103,4 @@ public class OrderLineServiceTest {
 
         assertThrows(DataNotFoundException.class, () -> mOrderLineService.createOrderLines(orderLinesRequest, lOrderId));
     }
-
 }

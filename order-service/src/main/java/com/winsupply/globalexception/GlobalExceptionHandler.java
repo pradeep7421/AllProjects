@@ -15,6 +15,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.reactive.result.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -68,7 +69,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * @return A response entity with an error message and HTTP status BAD_REQUEST
      */
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleCustomException(final ConstraintViolationException pException) {
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(final ConstraintViolationException pException) {
 
         mLogger.error(pException.getMessage(), pException);
         return new ResponseEntity<>(new ErrorResponse(false, pException.getMessage(), null), HttpStatus.BAD_REQUEST);
@@ -98,6 +99,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         mLogger.error(pException.getMessage(), pException);
         return new ResponseEntity<>(new ErrorResponse(false, pException.getMessage(), null), HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException pException) {
+        mLogger.error(pException.getMessage(), pException);
+        return new ResponseEntity<>(new ErrorResponse(false, "input type mismached in url please enter correct input", null), HttpStatus.BAD_REQUEST);
     }
 
 }
