@@ -1,0 +1,94 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.1.0'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id "org.sonarqube" version "3.5.0.2730"
+    id "jacoco"
+    id "checkstyle"
+}
+
+group = 'com.winsupply'
+sourceCompatibility = '17'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+sonarqube {
+    properties {
+        property("sonar.projectKey", "winsupplyinc_mdm-customer-to-ecom-subscriber")
+        property("sonar.organization", "winsupplyinc")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.8"
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
+    }
+}
+
+checkstyle {
+    toolVersion = "10.5.0"
+    System.setProperty('checkstyle.cache.file', String.format('%s/%s', buildDir, 'checkstyle.cachefile'))
+}
+
+repositories {
+    maven {
+        url = uri("https://nexus-repo.winwholesale.com/repository/win-maven-releases")
+        allowInsecureProtocol = true
+    }
+    maven {
+        url = uri("https://nexus-repo.winwholesale.com/repository/win-maven-snapshots")
+        allowInsecureProtocol = true
+    }
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation "com.win:win-subscriber-error-email-plugin:1.0.2"
+    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation group: 'javax.jms', name: 'jms', version: '1.1'
+    implementation 'org.springframework:spring-jms:6.0.11'
+    implementation 'com.ibm.mq:mq-jms-spring-boot-starter:3.1.2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    environment "CHANNEL", "CHANNEL"
+    environment "ENV", "LOCAL"
+    environment "SERVER_PORT", "8581"
+    environment "MQ_HOST_NAME", "HOST"
+    environment "MQ_PORT", "2020"
+    environment "MQ_QUEUE_MANAGER", "QUEUE_MANAGER"
+    environment "MQ_SUB_CLIENT_ID", "SUB_CLIENT_ID"
+    environment "MQ_SUB_NAME", "SUB_NAME"
+    environment "MQ_QUEUE_NAME", "TEST.QUOTES"
+    environment "MQ_USERNAME", "USERNAME"
+    environment "MQ_PASSWORD", "PASSWORD"
+    environment "DC_DB_PASSWORD", "password"
+	environment "DC_DB_URL", "jdbc:sqlserver://database-url"
+    environment "DC_DB_USER", "username"
+    environment "EMAIL_HOST", "smtp.com"
+    environment "EMAIL_PORT", "25"
+    environment "EMAIL_FROM", "noreply@test.com"
+    useJUnitPlatform()
+}

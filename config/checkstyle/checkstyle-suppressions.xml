@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+    "http://checkstyle.sourceforge.net/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+  <suppress checks="(MemberName|MethodName|ParameterName)"
+            files="[/\\]src[/\\](test|integration-test)[/\\]java[/\\]"/>
+  <suppress checks="LineLengthCheck"
+            files="[/\\]src[/\\](test|integration-test)[/\\]java[/\\]"/>
+  <suppress checks="HideUtilityClassConstructorCheck"
+            files="[/\\]src[/\\](test|integration-test)[/\\]java[/\\]"/>
+
+  <!-- Project-specific paths -->
+  <suppress checks="HideUtilityClassConstructorCheck"
+            files="[/\\]*.java$"/>
+</suppressions>
