@@ -27,7 +27,6 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerRepository
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerResupplyRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerSubAccountRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.LocationRepository;
-import jakarta.xml.bind.JAXBException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -77,7 +76,6 @@ public class CustomerSubscriberService {
      *
      * @param pPayload        - the Payload
      * @param pMessageHeaders - the Message Headers
-     * @throws JAXBException - the JAXBException
      */
     @Transactional
     public void processCustomerMessage(final String pPayload, final MessageHeaders pMessageHeaders) {

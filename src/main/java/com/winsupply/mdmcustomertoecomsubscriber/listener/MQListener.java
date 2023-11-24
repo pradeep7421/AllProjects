@@ -1,6 +1,7 @@
 package com.winsupply.mdmcustomertoecomsubscriber.listener;
 
 import com.winsupply.mdmcustomertoecomsubscriber.service.CustomerSubscriberService;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jms.annotation.JmsListener;
@@ -9,12 +10,13 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Component;
 
 /**
- * Listens to the messages from queue
+ * Listens to the messages from topic
  *
  * @author Amritanshu
  *
  */
 @Component
+@RequiredArgsConstructor
 public class MQListener {
 
     /**
@@ -24,18 +26,14 @@ public class MQListener {
 
     private final CustomerSubscriberService mCustomerSubscriberService;
 
-    public MQListener(final CustomerSubscriberService pCustomerSubscriberService) {
-        this.mCustomerSubscriberService = pCustomerSubscriberService;
-    }
-
     /**
-     * <b>receiveEcomQuotesWiseMsg</b> - Receives the WISE quote messages
+     * <b>receiveEcomCustomerMdmMsg</b> - Receives the MDM customer messages
      *
      * @param pMessage - the Message
      */
     @JmsListener(destination = "${winsupply.mq.topicName}", containerFactory = "mdmCustomerJmsListenerContainerFactory",
-            subscription = "${winsupply.mq.subscriberName}")
-    public void receiveEcomQuotesWiseMsg(final Message<?> pMessage) {
+                subscription = "${winsupply.mq.subscriberName}")
+    public void receiveEcomCustomerMdmMsg(final Message<?> pMessage) {
         final String lPayload = (String) pMessage.getPayload();
         final MessageHeaders lMessageHeaders = pMessage.getHeaders();
 
