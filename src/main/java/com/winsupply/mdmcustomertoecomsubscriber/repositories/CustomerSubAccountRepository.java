@@ -1,7 +1,7 @@
 package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 
-import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerAccount;
-import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerAccountId;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerSubAccount;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -9,15 +9,19 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
- * Customer Account Repository
+ * Customer Sub Account Repository
  *
  * @author Amritanshu
  *
  */
 @Repository
-public interface CustomerAccountRepository extends JpaRepository<CustomerAccount, CustomerAccountId> {
+public interface CustomerSubAccountRepository extends JpaRepository<CustomerSubAccount, Integer> {
 
     @Modifying
-    @Query("delete from CustomerAccount ca where ca.id.customerECMId = :customerECMId")
+    @Query("delete from CustomerSubAccount csa where csa.customer.customerECMId = :customerECMId")
     void deleteAllByCustomerECMId(@Param("customerECMId") String pCustomerECMId);
+
+    List<CustomerSubAccount> findByCustomerCustomerECMIdAndStatusId(@Param("customerECMId") String pCustomerECMId,
+            @Param("statusId") Short pStatusId);
+
 }

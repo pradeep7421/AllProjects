@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,10 +16,11 @@ import lombok.Setter;
 @Embeddable
 @Setter
 @Getter
+@Builder
 public class CustomerAccountId implements Serializable {
 
     @Column(name = "customer_ecm_id")
-    private String customerEcmId;
+    private String customerECMId;
 
     @Column(name = "company_number")
     private String companyNumber;
@@ -35,12 +37,12 @@ public class CustomerAccountId implements Serializable {
 
         CustomerAccountId that = (CustomerAccountId) o;
 
-        return Objects.equals(customerEcmId, that.customerEcmId) && Objects.equals(companyNumber, that.companyNumber)
+        return Objects.equals(customerECMId, that.customerECMId) && Objects.equals(companyNumber, that.companyNumber)
                 && Objects.equals(attributeName, that.attributeName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(customerEcmId, companyNumber, attributeName);
+        return Objects.hash(customerECMId, companyNumber, attributeName);
     }
 }

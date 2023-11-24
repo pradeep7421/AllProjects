@@ -9,21 +9,21 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Customer Location ID
+ * CustomerResupply Id
  *
- * @author Purushotham Reddy T
+ * @author Amritanshu
  */
 @Embeddable
 @Setter
 @Getter
 @Builder
-public class CustomerLocationId implements Serializable {
+public class CustomerResupplyId implements Serializable {
 
     @Column(name = "customer_ecm_id")
     private String customerECMId;
 
-    @Column(name = "company_number")
-    private String companyNumber;
+    @Column(name = "resupply_location")
+    private String resupplyLocation;
 
     @Override
     public boolean equals(Object o) {
@@ -32,16 +32,13 @@ public class CustomerLocationId implements Serializable {
         if (o == null || getClass() != o.getClass())
             return false;
 
-        CustomerLocationId that = (CustomerLocationId) o;
+        CustomerResupplyId that = (CustomerResupplyId) o;
 
-        if (!customerECMId.equals(that.customerECMId))
-            return false;
-        return companyNumber.equals(that.companyNumber);
+        return Objects.equals(customerECMId, that.customerECMId) && Objects.equals(resupplyLocation, that.resupplyLocation);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(customerECMId, companyNumber);
+        return Objects.hash(customerECMId, resupplyLocation);
     }
-
 }

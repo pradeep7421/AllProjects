@@ -40,8 +40,8 @@ public class CustomerSubAccount {
     @JoinColumn(name = "customer_ecm_id", referencedColumnName = "customer_ecm_id", nullable = false)
     private Customer customer;
 
-    @Column(name = "status_id", length = 15, nullable = false)
-    private String statusId;
+    @Column(name = "status_id", nullable = false)
+    private Short statusId;
 
     @Column(name = "account_number", length = 10, nullable = false)
     private String accountNumber;

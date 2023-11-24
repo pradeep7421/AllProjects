@@ -20,7 +20,11 @@ public class CustomerMessageVO {
 
     private String fullName;
 
+    private String interCompanyId;
+
     private String proRewardsId;
+
+    private List<String> vmiLocations;
 
     private String winCCA;
 
@@ -92,19 +96,14 @@ public class CustomerMessageVO {
 
         private String lastName;
 
-        @JsonProperty("userId")
         private String userId;
 
-        @JsonProperty("jobTitle")
         private String jobTitle;
 
-        @JsonProperty("role")
         private String role;
 
-        @JsonProperty("contactEmails")
         private List<Email> contactEmails;
 
-        @JsonProperty("contactPhones")
         private List<Phone> contactPhones;
     }
 
@@ -120,6 +119,8 @@ public class CustomerMessageVO {
 
         private String interCompanyCode;
 
+        private String accountEcommerceStatus;
+
         private String fullName;
 
         private String status;
@@ -131,18 +132,8 @@ public class CustomerMessageVO {
 
         private List<SubAccount> wiseSubAccounts;
 
-        @JsonProperty("alternateNames")
-        private List<AlternateName> alternateNames;
-
         @JsonProperty("addresses")
         private List<Address> addresses;
-
-        @Data
-        @JsonInclude(Include.NON_NULL)
-        public static class AlternateName {
-
-            private String alternateNameId;
-        }
 
         @Data
         @JsonInclude(Include.NON_NULL)
@@ -152,15 +143,19 @@ public class CustomerMessageVO {
 
             private String proRewardsId;
 
-            private String primarySalesPerson;
-
-            private String secondarySalesPerson;
-
             private String creditLimit;
 
             private String creditDiscountEligible;
 
-            private String pricingColumnCode;
+            private String freightPercent;
+
+            private String freightCost;
+
+            private String poReqCode;
+
+            private String billToAccount;
+
+            private String cashSale;
         }
 
         @Data
@@ -179,13 +174,9 @@ public class CustomerMessageVO {
 
             private List<Address> subAccountAddresses;
 
-            private List<AlternateName> alternateNames;
-
             @Data
             @JsonInclude(Include.NON_NULL)
             public static class SubAccountDetail {
-
-                private String primarySalesPerson;
 
                 private String proRewardsId;
 
