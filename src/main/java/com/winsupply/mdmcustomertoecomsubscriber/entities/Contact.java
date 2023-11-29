@@ -47,10 +47,10 @@ public class Contact {
     @Column(name = "is_user_confirmed")
     private boolean isUserConfirmed;
 
-    @Column(name = "user_creation_flow", precision = 1, scale = 0)
+    @Column(name = "user_creation_flow", precision = 1)
     private Double userCreationFlow;
 
-    @Column(name = "login_attempt", precision = 1, scale = 0)
+    @Column(name = "login_attempt", precision = 1)
     private Double loginAttempt;
 
     @Column(name = "ecm_active")

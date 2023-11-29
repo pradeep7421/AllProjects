@@ -2,6 +2,10 @@ package com.winsupply.mdmcustomertoecomsubscriber.service;
 
 import com.winsupply.mdmcustomertoecomsubscriber.common.Constants;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactEmailPreference;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactIndustryPreference;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactRole;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerAccount;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerAccountNumber;
@@ -9,6 +13,10 @@ import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerLocation;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerResupply;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerSubAccount;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Location;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.PhoneNumberType;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ContactEmailPreferenceId;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ContactIndustryPreferenceId;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerAccountId;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerAccountNumberId;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerLocationId;
@@ -20,14 +28,24 @@ import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Addres
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Email;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.FederalId;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Phone;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.AddressRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactEmailPreferenceRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactIndustryPreferenceRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactRoleRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerAccountNumberRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerAccountRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerLocationRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerResupplyRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerSubAccountRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.EmailPreferenceRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.IndustryRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.LocationRepository;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +54,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderEmailAddressRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +94,26 @@ public class CustomerSubscriberService {
 
     private final CustomerResupplyRepository mCustomerResupplyRepository;
 
+    private final ContactRepository mContactRepository;
+
+    private final EmailPreferenceRepository mEmailPreferenceRepository;
+
+    private final ContactEmailPreferenceRepository mContactEmailPreferenceRepository;
+
+    private final ContactRoleRepository mContactRoleRepository;
+
+    private final ContactIndustryPreferenceRepository mContactIndustryPreferenceRepository;
+
+    private final IndustryRepository mIndustryRepository;
+
+    private final AddressRepository mAddressRepository;
+
+    private final PhoneRepository mPhoneRepository;
+
+    private final PhoneTypeRepository mPhoneTypeRepository;
+
+    private final OrderEmailAddressRepository mOrderEmailAddressRepository;
+
     /**
      * Process the Quotes Message
      *
@@ -92,7 +135,8 @@ public class CustomerSubscriberService {
             if (lActionCode != null && "delete".equalsIgnoreCase(lActionCode)) {
                 // TODO deleteCustomer(lCustomerEcmId);
             } else {
-                createOrUpdateCustomer(lCustomerMessageVO);
+                Customer lCustomer = createOrUpdateCustomer(lCustomerMessageVO);
+                createOrUpdateContacts(lCustomer, lCustomerMessageVO);
             }
 
         } catch (final Exception lException) {
@@ -100,13 +144,142 @@ public class CustomerSubscriberService {
         }
     }
 
+    private void createOrUpdateContacts(Customer pCustomer, CustomerMessageVO pCustomerMessageVO) {
+        List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
+        for (CustomerMessageVO.Contact lContact : lContacts) {
+            final String lUserId = lContact.getUserId();
+            if (StringUtils.hasText(lUserId) && isValidEmail(lUserId)) {
+                final String lFirstName = lContact.getFirstName();
+                final String lLastName = lContact.getLastName();
+                if (!StringUtils.hasText(lFirstName) || !StringUtils.hasText(lLastName)) {
+                    mLogger.error(String.valueOf(new ECMException("First Name or Last Name is missing")));
+                } else {
+                    Contact lContactEntity = mContactRepository.findByEmail(lUserId).orElseGet(Contact::new);
+                    if ("N".equalsIgnoreCase(lContact.getContactECommerceStatus())) {
+                        lContactEntity.setEcmActive((short) 0);
+                        continue;
+                    }
+                    if (!StringUtils.hasText(pCustomerMessageVO.getInterCompanyId())) {
+                        mLogger.debug("Setting role as lcAdmin for LC Customer Feed");
+                        ContactRole lContactRole = new ContactRole();
+                        lContactRole.setRoleId(1L);
+                        lContactEntity.setRole(lContactRole);
+                    }
+                    lContactEntity.setCustomer(pCustomer);
+                    lContactEntity.setContactECMId(lContact.getContactEcmId());
+                    lContactEntity.setEcmActive((short) 1);
+                    Optional<ContactRole> lContactRole;
+                    if (StringUtils.hasText(lContact.getRole())) {
+                        lContactRole = mContactRoleRepository.findByRoleDesc(lContact.getRole());
+                    } else {
+                        lContactRole = mContactRoleRepository.findByRoleDesc(Constants.PROCUREMENT_MANAGER);
+                    }
+                    lContactRole.ifPresent(lContactEntity::setRole);
+                    saveContactEntities(lContact, lContactEntity);
+                }
+            }
+
+        }
+    }
+    private boolean isValidEmail(final String pEmailAddress) {
+        return pEmailAddress.matches(Constants.EMAIL_PATTERN);
+    }
+    private void saveContactEntities(CustomerMessageVO.Contact lContact, Contact lContactEntity) {
+        Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(lContact);
+        Set<ContactIndustryPreference> lContactIndustryPreferenceSet = createContactIndustryPreferences(lContact);
+        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> lPhoneNumbersSet = createPhoneEntities(lContact, lContactEntity);
+        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress> lOrderEmailAddressSet = createOrderEmailAddress(lContact, lContactEntity);
+
+        mContactEmailPreferenceRepository.saveAll(lContactEmailPreferenceSet);
+        mContactIndustryPreferenceRepository.saveAll(lContactIndustryPreferenceSet);
+        if (!lPhoneNumbersSet.isEmpty()) {
+            mPhoneRepository.saveAll(lPhoneNumbersSet);
+        }
+        if (!lOrderEmailAddressSet.isEmpty())
+            mOrderEmailAddressRepository.saveAll(lOrderEmailAddressSet);
+        mContactRepository.save(lContactEntity);
+    }
+
+    private Set<OrderEmailAddress> createOrderEmailAddress(CustomerMessageVO.Contact pContactVO, Contact pContactEntity) {
+        return pContactVO.getContactEmails().stream()
+                .map(lContactEmailVO -> {
+                    if (lContactEmailVO.getEmailType().equals(Constants.ON_EMAIL_TYPE)) {
+                        OrderEmailAddress lOrderEmailAddress = new OrderEmailAddress();
+                        lOrderEmailAddress.setAddressId(pContactEntity.getAddress().getId());
+                        lOrderEmailAddress.setOrderEmailAddress(lContactEmailVO.getEmailAddress());
+                        return lOrderEmailAddress;
+                    } else if (lContactEmailVO.getEmailType().equals(Constants.EW_EMAIL_TYPE)) {
+                        pContactEntity.setEmail(lContactEmailVO.getEmailAddress());
+                        return null;
+                    }
+                    return null;
+                }).collect(Collectors.toSet());
+    }
+
+    private Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> createPhoneEntities(CustomerMessageVO.Contact pContactVO, Contact pContactEntity) {
+
+        return pContactVO.getContactPhones().stream()
+                .map(lPhone -> {
+                    com.winsupply.mdmcustomertoecomsubscriber.entities.Phone lPhoneEntity = new com.winsupply.mdmcustomertoecomsubscriber.entities.Phone();
+                    if (null == pContactEntity.getAddress()) {
+                        com.winsupply.mdmcustomertoecomsubscriber.entities.Address lAddress = new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
+                        lAddress = mAddressRepository.save(lAddress);
+                        pContactEntity.setAddress(lAddress);
+                        lPhoneEntity.setAddress(lAddress);
+                    } else {
+                        lPhoneEntity.setAddress(pContactEntity.getAddress());
+                    }
+                    lPhoneEntity.setPhoneNumber(lPhone.getPhoneNumber());
+                    Optional<PhoneNumberType> lPhoneNumberType = mPhoneTypeRepository.findByPhoneNumberTypeDesc(lPhone.getPhoneType());
+                    lPhoneNumberType.ifPresent(lPhoneEntity::setPhoneNumberType);
+                    return lPhoneEntity;
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private Set<ContactIndustryPreference> createContactIndustryPreferences(CustomerMessageVO.Contact pContactVO) {
+        return Arrays.stream(pContactVO.getIndustries().split(Constants.COMMA))
+                .map(mIndustryRepository::findByIndustryDesc)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(lEmailPreference -> {
+                    ContactIndustryPreference lContactIndustryPreference = new ContactIndustryPreference();
+                    ContactIndustryPreferenceId lContactIndustryPreferenceId = new ContactIndustryPreferenceId();
+                    lContactIndustryPreferenceId.setContactEcmId(pContactVO.getContactEcmId());
+                    lContactIndustryPreferenceId.setIndustryId(lEmailPreference.getIndustryId());
+                    lContactIndustryPreference.setId(lContactIndustryPreferenceId);
+                    return lContactIndustryPreference;
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private Set<ContactEmailPreference> createContactEmailPreferences(CustomerMessageVO.Contact pContactVO) {
+        return Optional.ofNullable(pContactVO.getCommunicationPreference())
+                .map(preferences -> preferences.stream()
+                        .map(mEmailPreferenceRepository::findByEmailPreferenceDesc)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .map(lEmailPreference -> {
+                            ContactEmailPreference lContactEmailPreference = new ContactEmailPreference();
+                            ContactEmailPreferenceId lContactEmailPreferenceId = new ContactEmailPreferenceId();
+                            lContactEmailPreferenceId.setContactEcmId(pContactVO.getContactEcmId());
+                            lContactEmailPreferenceId.setEmailPreferenceId(lEmailPreference.getEmailPreferenceId());
+                            lContactEmailPreference.setId(lContactEmailPreferenceId);
+                            return lContactEmailPreference;
+                        })
+                        .collect(Collectors.toSet())
+                )
+                .orElse(Collections.emptySet());
+    }
+
+
     /**
      * <b>createOrUpdateCustomer</b> - Create Or Update customer
      *
      * @param pCustomerMessageVO - the CustomerMessage VO
      * @throws ECMException - the ECMException
      */
-    private void createOrUpdateCustomer(final CustomerMessageVO pCustomerMessageVO) throws ECMException {
+    private Customer createOrUpdateCustomer(final CustomerMessageVO pCustomerMessageVO) throws ECMException {
         final String lCustomerECMId = pCustomerMessageVO.getCustomerEcmId();
 
         Customer lCustomer = null;
@@ -141,6 +314,7 @@ public class CustomerSubscriberService {
         importAddressesData(lCustomer, pCustomerMessageVO.getAddresses());
 
         mCustomerRepository.save(lCustomer);
+        return lCustomer;
     }
 
     /**
@@ -161,7 +335,7 @@ public class CustomerSubscriberService {
         final List<CustomerSubAccount> lInActiveCustomerSubAccounts = mCustomerSubAccountRepository
                 .findByCustomerCustomerECMIdAndStatusId(lCustomerECMId, lInActive);
         final List<String> lInActiveCustomerSubAccountList = lInActiveCustomerSubAccounts.stream().map(
-                lInActiveCustomerSubAccount -> lInActiveCustomerSubAccount.getCompanyNumber() + "-" + lInActiveCustomerSubAccount.getAccountNumber())
+                        lInActiveCustomerSubAccount -> lInActiveCustomerSubAccount.getCompanyNumber() + "-" + lInActiveCustomerSubAccount.getAccountNumber())
                 .toList();
 
         mCustomerAccountRepository.deleteAllByCustomerECMId(lCustomerECMId);
@@ -228,7 +402,6 @@ public class CustomerSubscriberService {
     }
 
     /**
-     *
      * @param pCustomer
      * @param pAddresses
      */
@@ -238,7 +411,6 @@ public class CustomerSubscriberService {
     }
 
     /**
-     *
      * @param pCustomer
      * @param pEmails
      */
@@ -248,7 +420,6 @@ public class CustomerSubscriberService {
     }
 
     /**
-     *
      * @param pCustomer
      * @param pPhones
      */
@@ -353,12 +524,12 @@ public class CustomerSubscriberService {
      * <b>validateAndFilterAccounts</b> - Validates and filters WISE accounts
      *
      * @param pWiseAccounts - the WISE Accounts
-     * @throws ECMException - the ECMException
      * @return Map<String, Account>
+     * @throws ECMException - the ECMException
      */
     private Map<String, Account> validateAndFilterAccounts(final List<Account> pWiseAccounts) throws ECMException {
         final Map<String, Account> lFilteredAccountsMap = new LinkedHashMap<>(pWiseAccounts.size());
-        if (pWiseAccounts != null && !pWiseAccounts.isEmpty()) {
+        if (!pWiseAccounts.isEmpty()) {
             for (final Account lWiseAccount : pWiseAccounts) {
                 processWiseAccount(lFilteredAccountsMap, lWiseAccount);
             }

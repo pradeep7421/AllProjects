@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Set;
+
 import lombok.Data;
 
 /**
@@ -98,13 +100,29 @@ public class CustomerMessageVO {
 
         private String userId;
 
+        private String contactECommerceStatus;
+
+        private Set<String> communicationPreference = null;
+
         private String jobTitle;
 
         private String role;
 
-        private List<Email> contactEmails;
+        private String industries;
+
+        private List<ContactEmail> contactEmails;
 
         private List<Phone> contactPhones;
+
+        @Data
+        @JsonInclude(Include.NON_NULL)
+        public static class ContactEmail {
+            private String emailAddress;
+            private String emailType;
+            private String optOutInd;
+            private String preferenceLevel;
+            private String comments;
+        }
     }
 
     @Data

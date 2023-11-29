@@ -32,6 +32,10 @@ public class Phone {
     private String phoneNumber;
 
     @ManyToOne
+    @JoinColumn(name = "phone_number_type_id")
+    private PhoneNumberType phoneNumberType;
+
+    @ManyToOne
     @JoinColumn(name = "address_id")
     private Address address;
 }
