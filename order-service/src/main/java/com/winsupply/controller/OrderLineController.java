@@ -1,5 +1,6 @@
 package com.winsupply.controller;
 
+import com.winsupply.constants.Constants;
 import com.winsupply.model.OrderLineRequest;
 import com.winsupply.model.response.SuccessResponse;
 import com.winsupply.service.OrderLineService;
@@ -58,7 +59,7 @@ public class OrderLineController {
             @RequestParam(name = "orderId") Integer pOrderId) {
         mLogger.info("payload -> pOrderLineItems :{} ", pOrderLinesRequest);
         mOrderLineService.createOrderLines(pOrderLinesRequest, pOrderId);
-        return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse(true, "orderLine updated successfully"));
+        return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse(true, Constants.ORDERLINE_UPDATED_SUCCESSFULLY));
     }
 
 }

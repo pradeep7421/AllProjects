@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /**
- * The repository interface for managing Order entities in the database. 
+ * The repository interface for managing Order entities in the database
  *
  * @param <Order>   - The entity type, representing an Order in the database
  * @param <Integer> - The data type of the primary key for the Order entity

@@ -1,10 +1,15 @@
 package com.winsupply.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.winsupply.constants.Constants;
 import com.winsupply.entity.Order;
 import com.winsupply.entity.OrderLine;
 import com.winsupply.globalexception.DataNotFoundException;
 import com.winsupply.model.OrderLineRequest;
 import com.winsupply.model.OrderRequest;
+import com.winsupply.promotion.PromotionResponse;
 import com.winsupply.repository.OrderLineRepository;
 import com.winsupply.repository.OrderRepository;
 import java.util.ArrayList;
@@ -16,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 /**
@@ -40,21 +46,26 @@ public class OrderService {
      */
     private final OrderLineRepository mOrderLineRepository;
 
+    private final PromotionService mPromotionService;
+
     /**
      * Creates a new instance of the OrderService
      *
      * @param - pOrderRepository The repository for accessing orders
      * @param - pOrderLineRepository The repository for accessing order lines
      */
-    public OrderService(OrderRepository pOrderRepository, OrderLineRepository pOrderLineRepository) {
+    public OrderService(OrderRepository pOrderRepository, OrderLineRepository pOrderLineRepository, PromotionService pPromotionService) {
         this.mOrderRepository = pOrderRepository;
         this.mOrderLineRepository = pOrderLineRepository;
+        this.mPromotionService = pPromotionService;
+
     }
 
     /**
      * Creates a new order based on the provided order request
      *
      * @param pOrderRequest - The request containing order information
+     * @throws Exception
      */
     public void createOrder(OrderRequest pOrderRequest) {
 
@@ -67,7 +78,6 @@ public class OrderService {
         lOrder.setOrderLines(lOrderLines);
 
         mOrderRepository.save(lOrder);
-
         mOrderLineRepository.saveAll(lOrderLines);
 
         mLogger.debug("Exiting createOrder method");
@@ -79,19 +89,31 @@ public class OrderService {
      * @param pOrderId - The unique value of the order
      * @return - The order details or throws DataNotFoundException if the order is
      *         not found
+     * @throws JsonProcessingException
+     * @throws JsonMappingException
      */
     // TODO- @Transactional
-    public Optional<Order> getOrderDetails(int pOrderId) {
+    public Optional<Order> getOrderDetails(int pOrderId, String pUserAgent) throws JsonMappingException, JsonProcessingException {
 
         mLogger.debug("pOrderId -> Order Id: {}", pOrderId);
 
         Optional<Order> lOrderOptional = mOrderRepository.findById(pOrderId);
 
         if (lOrderOptional.isPresent()) {
+            Order lOrder = lOrderOptional.get();
+            ResponseEntity<String> lResponseEntity = mPromotionService.getPromotionDetails(pUserAgent, lOrder.getAmount());
+
+            PromotionResponse lPromotionResponse = new ObjectMapper().readValue(lResponseEntity.getBody(), PromotionResponse.class);
+            Double lAmountBeforeDiscount = lOrder.getAmount();
+            Double lAmountAfterDiscount = lAmountBeforeDiscount - lPromotionResponse.getData().getFinalDiscountAmount();
+            lOrderOptional.get().setAmount(lAmountAfterDiscount);
+
+            mLogger.info("PromotionResponse: {},ResponseEntity body: {}, ResponseEntity status code: {},", lPromotionResponse,
+                    lResponseEntity.getBody(), lResponseEntity.getStatusCode());
             return lOrderOptional;
         } else {
             mLogger.debug("Exiting getOrderDetails method");
-            throw new DataNotFoundException("Order details not found");
+            throw new DataNotFoundException(Constants.ORDER_NOT_FOUND);
         }
     }
 
@@ -109,7 +131,7 @@ public class OrderService {
         OrderLine lOrderLine = mOrderLineRepository.findByOrderLineIdAndOrderOrderId(pOrderLineId, pOrderId).orElse(null);
 
         if (lOrderLine == null) {
-            throw new DataNotFoundException("incorrect orderLineId or orderId");
+            throw new DataNotFoundException(Constants.INCORRECT_ID);
         }
 
         lOrderLine.setQuantity(pQuantity);
@@ -170,7 +192,7 @@ public class OrderService {
      * @return - A list of OrderLine entities representing individual items in the
      *         order
      */
-    private List<OrderLine> createOrderlines(OrderRequest pOrderRequest, Order pOrder) {
+    public List<OrderLine> createOrderlines(OrderRequest pOrderRequest, Order pOrder) {
         List<OrderLine> lOrderLines = new ArrayList<>();
 
         for (OrderLineRequest lOrderLineRequest : pOrderRequest.getOrderLines()) {
@@ -191,7 +213,7 @@ public class OrderService {
      * @param - pOrderRequest The OrderRequest object containing order details.
      * @return - An Order entity representing the order.
      */
-    private Order createOrderEntity(final OrderRequest pOrderRequest) {
+    public Order createOrderEntity(final OrderRequest pOrderRequest) {
         mLogger.debug("pOrderRequest -> Order Name: {}, Order Amount: {}", pOrderRequest.getOrderName(), pOrderRequest.getAmount());
         Order lOrder = new Order();
         lOrder.setAmount(pOrderRequest.getAmount());

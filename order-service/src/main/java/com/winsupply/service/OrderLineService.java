@@ -1,5 +1,6 @@
 package com.winsupply.service;
 
+import com.winsupply.constants.Constants;
 import com.winsupply.entity.Order;
 import com.winsupply.entity.OrderLine;
 import com.winsupply.globalexception.DataNotFoundException;
@@ -60,7 +61,7 @@ public class OrderLineService {
             mOrderLineRepository.saveAll(lOrderLines);
 
         } else {
-            throw new DataNotFoundException("Order Details not found");
+            throw new DataNotFoundException(Constants.ORDER_NOT_FOUND);
         }
     }
 

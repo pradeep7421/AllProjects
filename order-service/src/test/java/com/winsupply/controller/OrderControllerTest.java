@@ -1,6 +1,7 @@
 package com.winsupply.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.winsupply.constants.Constants;
 import com.winsupply.entity.Order;
 import com.winsupply.model.OrderLineRequest;
 import com.winsupply.model.OrderRequest;
@@ -95,13 +96,13 @@ class OrderControllerTest {
 
         Mockito.doNothing().when(mOrderService).createOrder(lOrderRequest);
 
-        mMockMvc.perform(MockMvcRequestBuilders.post("/orders").contentType(MediaType.APPLICATION_JSON)
+        mMockMvc.perform(MockMvcRequestBuilders.post(Constants.POST_URL).contentType(MediaType.APPLICATION_JSON)
                 .content(mObjectMapper.writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isCreated());
     }
 
     /**
-     * Tests a new order based on the provided empty or invalid order request and throws Exception if
-     * not created
+     * Tests a new order based on the provided empty or invalid order request and
+     * throws Exception if not created
      */
     @Test
     void testCreateOrder_WithEmptyOrInvalidOrderFields() throws Exception {
@@ -117,13 +118,13 @@ class OrderControllerTest {
 
         Mockito.doNothing().when(mOrderService).createOrder(lOrderRequest);
 
-        mMockMvc.perform(MockMvcRequestBuilders.post("/orders").contentType(MediaType.APPLICATION_JSON)
+        mMockMvc.perform(MockMvcRequestBuilders.post(Constants.POST_URL).contentType(MediaType.APPLICATION_JSON)
                 .content(mObjectMapper.writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     /**
-     * Tests a new order based on the provided with empty or invalid order Line request and throws Exception if
-     * not created
+     * Tests a new order based on the provided with empty or invalid order Line
+     * request and throws Exception if not created
      */
     @Test
     void testCreateOrder_WithEmptyOrInvalidOrderLinesFields() throws Exception {
@@ -134,7 +135,7 @@ class OrderControllerTest {
 
         Mockito.doNothing().when(mOrderService).createOrder(lOrderRequest);
 
-        mMockMvc.perform(MockMvcRequestBuilders.post("/orders").contentType(MediaType.APPLICATION_JSON)
+        mMockMvc.perform(MockMvcRequestBuilders.post(Constants.POST_URL).contentType(MediaType.APPLICATION_JSON)
                 .content(mObjectMapper.writeValueAsString(lOrderRequest))).andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
@@ -144,12 +145,12 @@ class OrderControllerTest {
     @Test
     void testGetOrderDetails() throws Exception {
         int lOrderId = 1;
+        String lUserAgent = "Mozilla/5.0 (iPhone; U; ru; CPU iPhone OS 4_2_1 like Mac OS X; ru) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148a Safari/6533.18.5";
 
-        when(mOrderService.getOrderDetails(lOrderId)).thenReturn(java.util.Optional.of(new Order()));
+        when(mOrderService.getOrderDetails(lOrderId, lUserAgent)).thenReturn(Optional.of(new Order()));
 
-        mMockMvc.perform(
-                MockMvcRequestBuilders.get("/orders/{orderId}", lOrderId).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk());
+        mMockMvc.perform(MockMvcRequestBuilders.get(Constants.GET_URL, lOrderId).header(Constants.USER_AGENT, lUserAgent)
+                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     /**
@@ -159,12 +160,12 @@ class OrderControllerTest {
     @Test
     void testGetOrderDetails_WithWrongOrderId() throws Exception {
         int lOrderId = 14545;
+        String lUserAgent = "Mozilla/5.0 (iPhone; U; ru; CPU iPhone OS 4_2_1 like Mac OS X; ru) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148a Safari/6533.18.5";
 
-        when(mOrderService.getOrderDetails(lOrderId)).thenReturn(Optional.empty());
+        when(mOrderService.getOrderDetails(lOrderId, lUserAgent)).thenReturn(Optional.empty());
 
-        mMockMvc.perform(
-                MockMvcRequestBuilders.get("/orders/{orderId}", lOrderId).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isNotFound());
+        mMockMvc.perform(MockMvcRequestBuilders.get("/orders/{orderId}", lOrderId).header(Constants.USER_AGENT, lUserAgent)
+                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 
     /**

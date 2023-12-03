@@ -1,5 +1,7 @@
 package com.winsupply.model;
 
+import com.winsupply.constants.Constants;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -18,23 +20,23 @@ public class OrderRequest {
     /**
      * The amount takes values of type double
      */
-    @Min(value = 1, message = "The minimum value must be 1")
-    @NotNull(message = "Order amount must not be blank")
+    @Min(value = 1, message = Constants.MIN_VALUE)
+    @NotNull(message = Constants.NULL_VALUE)
     private Double amount;
 
     /**
      * The orderName takes values of type string
      */
-    @Pattern(regexp = "^[a-zA-Z ]{1,200}+$", message = "order name must contain Only alphabetic characters and spaces are allowed and must have atmost 200 characters")
-    @NotBlank(message = "Order name must not be blank")
+    @Pattern(regexp = Constants.ORDER_NAME_REGEX_PATTERN, message = Constants.ORDER_NAME_SIZE)
+    @NotBlank(message = Constants.ORDER_NAME_NOT_BLANK)
     private String orderName;
 
     /**
      * The orderLines takes values of type List
      */
     @Valid
-    @NotNull(message = "orderlines must not be null")
-    @Size(min = 1, message = "minimum OrderLine must be 1")
+    @NotNull(message = Constants.ORDERLINES_NOT_NULL)
+    @Size(min = 1, message = Constants.MIN_ORDERLINES)
     private List<OrderLineRequest> orderLines;
 
 }

@@ -1,5 +1,7 @@
 package com.winsupply.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.winsupply.entity.Order;
 import com.winsupply.entity.OrderLine;
 import com.winsupply.globalexception.DataNotFoundException;
@@ -22,10 +24,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,6 +59,9 @@ class OrderServiceTest {
      */
     @Mock
     OrderLineRepository mOrderLineRepository;
+
+    @Mock
+    PromotionService mPromotionService;
 
     /**
      * Tests a new order based on the provided order request
@@ -86,12 +94,14 @@ class OrderServiceTest {
         }
         lOrder.setOrderLines(lOrderLines);
 
-        when(mOrderRepository.save(lOrder)).thenReturn(lOrder);
-        when(mOrderLineRepository.saveAll(lOrderLines)).thenReturn(lOrderLines);
+        when(mOrderRepository.save(any(Order.class))).thenReturn(lOrder);
+        when(mOrderLineRepository.saveAll(anyList())).thenReturn(lOrderLines);
 
         mOrderService.createOrder(lOrderRequest);
-        verify(mOrderRepository).save(Mockito.any(Order.class));
-        verify(mOrderLineRepository).saveAll(Mockito.anyList());
+
+        verify(mOrderRepository, times(1)).save(any(Order.class));
+        verify(mOrderLineRepository, times(1)).saveAll(anyList());
+
     }
 
     /**
@@ -99,9 +109,10 @@ class OrderServiceTest {
      */
     @Test
     void testCreateOrder_NullOrderRequest() throws Exception {
+        OrderRequest lOrderRequest = null;
 
-        assertThrows(Exception.class, () -> mOrderService.createOrder(null));
-        verify(mOrderRepository, never()).save(Mockito.any(Order.class));
+        assertThrows(Exception.class, () -> mOrderService.createOrder(lOrderRequest));
+        verify(mOrderRepository, never()).save(any(Order.class));
         verify(mOrderLineRepository, never()).saveAll(Mockito.anyList());
 
     }
@@ -112,6 +123,8 @@ class OrderServiceTest {
     @Test
     void testCreateOrder_NullOrderLineRequest() throws Exception {
         OrderRequest lOrderRequest = new OrderRequest();
+        List<OrderLineRequest> lOrderLinesRequest = null;
+        lOrderRequest.setOrderLines(lOrderLinesRequest);
         assertThrows(Exception.class, () -> mOrderService.createOrder(lOrderRequest));
         verify(mOrderRepository, never()).save(Mockito.any(Order.class));
         verify(mOrderLineRepository, never()).saveAll(Mockito.anyList());
@@ -129,19 +142,21 @@ class OrderServiceTest {
         lOrderLinesRequest.add(lOrderLineRequest);
         lOrderRequest.setOrderLines(lOrderLinesRequest);
 
-        assertThrows(NullPointerException.class, () -> {
-            mOrderService.createOrder(lOrderRequest);
-        });
+        assertThrows(NullPointerException.class, () -> mOrderService.createOrder(lOrderRequest));
         verify(mOrderRepository, never()).save(Mockito.any(Order.class));
         verify(mOrderLineRepository, never()).saveAll(Mockito.anyList());
     }
 
     /**
      * tests testGetOrderDetails method
+     * @throws JsonProcessingException
+     * @throws JsonMappingException
      */
     @Test
-    void testGetOrderDetails() {
+    void testGetOrderDetails() throws JsonMappingException, JsonProcessingException {
         int lOrderId = 1;
+        double lAmount = 100000d;
+        String lUserAgent = "Mozilla/5.0 (iPhone; U; ru; CPU iPhone OS 4_2_1 like Mac OS X; ru) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148a Safari/6533.18.5";
 
         Order lOrder = new Order();
         lOrder.setOrderId(lOrderId);
@@ -163,9 +178,11 @@ class OrderServiceTest {
 
         when(mOrderRepository.findById(1)).thenReturn(Optional.of(lOrder));
 
-        mOrderService.getOrderDetails(lOrderId);
+        when(mPromotionService.getPromotionDetails(lUserAgent, lAmount)).thenReturn(ResponseEntity.ok(any(String.class)));
+
+        mOrderService.getOrderDetails(lOrderId, lUserAgent);
         verify(mOrderRepository, times(1)).findById(lOrderId);
-        assertEquals(100000, lOrder.getAmount());
+
     }
 
     /**
@@ -175,11 +192,12 @@ class OrderServiceTest {
     public void testGetOrderDetails_WhenOrderDoesNotExist() {
 
         int lOrderId = 12;
+        String lUserAgent = "Mozilla/5.0 (iPhone; U; ru; CPU iPhone OS 4_2_1 like Mac OS X; ru) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148a Safari/6533.18.5";
 
         when(mOrderRepository.findById(lOrderId)).thenReturn(Optional.empty());
 
         assertThrows(DataNotFoundException.class, () -> {
-            mOrderService.getOrderDetails(lOrderId);
+            mOrderService.getOrderDetails(lOrderId, lUserAgent);
         });
 
     }

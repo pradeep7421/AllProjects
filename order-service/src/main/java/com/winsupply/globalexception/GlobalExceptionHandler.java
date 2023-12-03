@@ -1,5 +1,6 @@
 package com.winsupply.globalexception;
 
+import com.winsupply.constants.Constants;
 import com.winsupply.model.response.ErrorResponse;
 import com.winsupply.model.response.SuccessResponse;
 import jakarta.validation.ConstraintViolationException;
@@ -59,7 +60,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                     return lErrorsMap;
                 }).toList();
         mLogger.error(pException.getMessage(), pException);
-        return new ResponseEntity<>(new ErrorResponse(false, "Validation Errors", lFiledValidationErrors), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(false, Constants.REQUEST_VALIDATION_ERRORS, lFiledValidationErrors), HttpStatus.BAD_REQUEST);
     }
 
     /**
@@ -100,10 +101,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         mLogger.error(pException.getMessage(), pException);
         return new ResponseEntity<>(new ErrorResponse(false, pException.getMessage(), null), HttpStatus.BAD_REQUEST);
     }
+
+    /**
+     * Handle MethodArgumentTypeMismatchException by returning a BAD_REQUEST response
+     *
+     * @param pException The MethodArgumentTypeMismatchException Exception instance
+     * @return A response entity with an error message and HTTP status BAD_REQUEST
+     */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException pException) {
         mLogger.error(pException.getMessage(), pException);
-        return new ResponseEntity<>(new ErrorResponse(false, "input type mismached in url please enter correct input", null), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ErrorResponse(false, Constants.INPUT_MISMATCHED, null), HttpStatus.BAD_REQUEST);
     }
 
 }
