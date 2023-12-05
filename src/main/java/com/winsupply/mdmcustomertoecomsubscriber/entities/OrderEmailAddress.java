@@ -15,7 +15,7 @@ import lombok.Setter;
  * @author Purushotham Reddy T
  */
 @Entity
-@Table(name = "order_email_addresses", schema = "ecom")
+@Table(name = "order_email_address", schema = "ecom")
 @Getter
 @Setter
 public class OrderEmailAddress {

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Set;
-
 import lombok.Data;
 
 /**
@@ -41,6 +40,8 @@ public class CustomerMessageVO {
     private List<Contact> contacts;
 
     private List<Account> wiseAccounts;
+
+    private List<AtgAccount> atgAccounts;
 
     @Data
     @JsonInclude(Include.NON_NULL)
@@ -203,7 +204,22 @@ public class CustomerMessageVO {
                 private String creditStatusCode;
 
                 private String secondarySalesPerson;
+
+                private String poReqCode;
+
+                private String freightPercent;
+
+                private String freightCost;
             }
         }
+    }
+
+    @Data
+    @JsonInclude(Include.NON_NULL)
+    public static class AtgAccount {
+
+        private String atgSystemSrcId;
+
+        private String type;
     }
 }

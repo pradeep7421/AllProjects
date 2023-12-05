@@ -34,7 +34,7 @@ public class CustomerSubAccount {
 
     @OneToOne
     @JoinColumn(name = "company_number", referencedColumnName = "company_number", nullable = false)
-    private Location companyNumber;
+    private Location location;
 
     @OneToOne
     @JoinColumn(name = "customer_ecm_id", referencedColumnName = "customer_ecm_id", nullable = false)
