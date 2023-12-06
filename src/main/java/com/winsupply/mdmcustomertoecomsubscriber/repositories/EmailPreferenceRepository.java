@@ -12,5 +12,12 @@ import org.springframework.data.repository.query.Param;
  */
 public interface EmailPreferenceRepository extends JpaRepository<EmailPreference, String> {
 
+    /**
+     * <b>findByEmailPreferenceDesc</b> - it finds EmailPreference based on email
+     * preference description
+     *
+     * @param pEmailPreferenceDesc - the email preference description
+     * @return - Optional<EmailPreference>
+     */
     Optional<EmailPreference> findByEmailPreferenceDesc(@Param("emailPreferenceDesc") String pEmailPreferenceDesc);
 }

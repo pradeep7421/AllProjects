@@ -15,5 +15,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface IndustryRepository extends JpaRepository<Industry, Short> {
 
+    /**
+     * <b>findByIndustryDesc</b> - it finds the Industry based on Industry
+     * description
+     *
+     * @param pIndustryDesc - the Industry description
+     * @return - Optional<Industry>
+     */
     Optional<Industry> findByIndustryDesc(@Param("industryDesc") String pIndustryDesc);
 }

@@ -124,21 +124,21 @@ public class ContactProcessor {
     /**
      * It imports the contact data
      *
-     * @param lContactEntity - the Contact Entity
-     * @param lContact       - the ContactVO
+     * @param pContactEntity - the Contact Entity
+     * @param pContact       - the ContactVO
      *
      */
-    private void importContactData(Contact lContactEntity, CustomerMessageVO.Contact lContact) {
-        lContactEntity.setFirstName(lContact.getFirstName());
-        lContactEntity.setLastName(lContact.getLastName());
-        lContactEntity.setEcmActive((short) 1);
+    private void importContactData(Contact pContactEntity, CustomerMessageVO.Contact pContact) {
+        pContactEntity.setFirstName(pContact.getFirstName());
+        pContactEntity.setLastName(pContact.getLastName());
+        pContactEntity.setEcmActive((short) 1);
 
-        Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(lContact);
-        populateRole(lContactEntity, lContact);
-        Set<ContactIndustryPreference> lContactIndustryPreferenceSet = createContactIndustryPreferences(lContact);
-        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> lPhoneNumbersSet = createPhones(lContactEntity, lContact);
-        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress> lOrderEmailAddressSet = createOrderEmailAddress(lContactEntity,
-                lContact);
+        Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(pContact);
+        populateRole(pContactEntity, pContact);
+        Set<ContactIndustryPreference> lContactIndustryPreferenceSet = createContactIndustryPreferences(pContact);
+        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> lPhoneNumbersSet = createPhones(pContactEntity, pContact);
+        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress> lOrderEmailAddressSet = createOrderEmailAddress(pContactEntity,
+                pContact);
 
         if (!lContactEmailPreferenceSet.isEmpty()) {
             mContactEmailPreferenceRepository.saveAll(lContactEmailPreferenceSet);
@@ -152,7 +152,7 @@ public class ContactProcessor {
         if (!CollectionUtils.isEmpty(lOrderEmailAddressSet)) {
             mOrderEmailAddressRepository.saveAll(lOrderEmailAddressSet);
         }
-        mContactRepository.save(lContactEntity);
+        mContactRepository.save(pContactEntity);
     }
 
     /**
@@ -184,19 +184,19 @@ public class ContactProcessor {
     /**
      * <b>populateRole</b> - It populates the contact role
      *
-     * @param lContactEntity - the Contact Entity
-     * @param lContactVO     - the Contact VO
+     * @param pContactEntity - the Contact Entity
+     * @param pContactVO     - the Contact VO
      */
-    private void populateRole(Contact lContactEntity, CustomerMessageVO.Contact lContactVO) {
+    private void populateRole(Contact pContactEntity, CustomerMessageVO.Contact pContactVO) {
         Integer lRoleId;
-        if (StringUtils.hasText(lContactVO.getRole())) {
-            lRoleId = Utility.getContactRole(lContactVO.getRole());
+        if (StringUtils.hasText(pContactVO.getRole())) {
+            lRoleId = Utility.getContactRole(pContactVO.getRole());
         } else {
             lRoleId = Utility.getContactRole(Constants.PROCUREMENT_MANAGER_ROLE);
         }
 
         Optional<ContactRole> lRoleOpt = mContactRoleRepository.findById(lRoleId);
-        lRoleOpt.ifPresent(lContactEntity::setRole);
+        lRoleOpt.ifPresent(pContactEntity::setRole);
     }
 
     /**
@@ -210,21 +210,20 @@ public class ContactProcessor {
         Set<OrderEmailAddress> lOrderEmailAddresses = null;
         if (null != pContactVO.getContactEmails() && !pContactVO.getContactEmails().isEmpty()) {
             lOrderEmailAddresses = new HashSet<>();
-            // TODO - check with Amritanshu for login improvement with property
-            // isPreferredContactMethod
+            // TODO - check with Amritanshu for login improvement with property isPreferredContactMethod
             for (final ContactEmail lContactEmail : pContactVO.getContactEmails()) {
                 switch (lContactEmail.getEmailType()) {
-                case Constants.ON_EMAIL_TYPE:
-                    OrderEmailAddress lOrderEmailAddress = new OrderEmailAddress();
-                    lOrderEmailAddress.setAddressId(pContactEntity.getAddress().getId());
-                    lOrderEmailAddress.setOrderEmailAddress(lContactEmail.getEmailAddress());
-                    lOrderEmailAddresses.add(lOrderEmailAddress);
-                    break;
-                case Constants.EW_EMAIL_TYPE:
-                    pContactEntity.setEmail(lContactEmail.getEmailAddress());
-                    break;
-                default:
-                    break;
+                    case Constants.ON_EMAIL_TYPE:
+                        OrderEmailAddress lOrderEmailAddress = new OrderEmailAddress();
+                        lOrderEmailAddress.setAddressId(pContactEntity.getAddress().getId());
+                        lOrderEmailAddress.setOrderEmailAddress(lContactEmail.getEmailAddress());
+                        lOrderEmailAddresses.add(lOrderEmailAddress);
+                        break;
+                    case Constants.EW_EMAIL_TYPE:
+                        pContactEntity.setEmail(lContactEmail.getEmailAddress());
+                        break;
+                    default:
+                        break;
                 }
             }
         }

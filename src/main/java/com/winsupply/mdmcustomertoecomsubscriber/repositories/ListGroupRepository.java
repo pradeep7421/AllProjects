@@ -19,5 +19,4 @@ public interface ListGroupRepository extends JpaRepository<ListGroup, Integer> {
      * @return - List<ListGroup>
      */
     List<ListGroup> findByCustomerCustomerECMId(String pCustomerECMId);
-
 }

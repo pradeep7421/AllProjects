@@ -14,5 +14,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PhoneTypeRepository extends JpaRepository<PhoneNumberType, Short> {
 
+    /**
+     * <b>findByPhoneNumberTypeDesc</b> - it returns the PhoneNumberType based on
+     * phone type description
+     *
+     * @param pPhoneNumberTypeDesc - the PhoneNumber Type Desc
+     * @return - Optional<PhoneNumberType>
+     */
     Optional<PhoneNumberType> findByPhoneNumberTypeDesc(String pPhoneNumberTypeDesc);
 }

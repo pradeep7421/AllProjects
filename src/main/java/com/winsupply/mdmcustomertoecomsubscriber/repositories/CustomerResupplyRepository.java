@@ -16,6 +16,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CustomerResupplyRepository extends JpaRepository<CustomerResupply, CustomerResupplyId> {
 
+    /**
+     * <b>deleteAllByCustomerECMId</b> - It deletes the CustomerResupply based on
+     * Customer ECM Id
+     *
+     * @param pCustomerECMId - the Customer ECM Id
+     */
     @Modifying
     @Query("delete from CustomerResupply cr where cr.id.customerECMId = :customerECMId")
     void deleteAllByCustomerECMId(@Param("customerECMId") String pCustomerECMId);
