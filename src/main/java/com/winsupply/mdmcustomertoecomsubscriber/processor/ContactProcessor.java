@@ -36,7 +36,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -78,7 +77,6 @@ public class ContactProcessor {
      * @param pCustomer          - the Customer
      * @param pCustomerMessageVO - the CustomerMessage
      */
-    @Transactional
     public void createOrUpdateContacts(Customer pCustomer, CustomerMessageVO pCustomerMessageVO) {
         List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
         for (CustomerMessageVO.Contact lContactVO : lContacts) {

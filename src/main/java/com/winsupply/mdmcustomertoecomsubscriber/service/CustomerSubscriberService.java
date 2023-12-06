@@ -177,16 +177,14 @@ public class CustomerSubscriberService {
                     if (Constants.LB.equalsIgnoreCase(lType)) {
                         pCustomer.setPhone(lPhoneNumber);
                     } else if (Constants.FX.equalsIgnoreCase(lType)) {
-                        // TODO - set FAX
-                        // pCustomer.setFax(lPhoneNumber);
+                        // TODO - pCustomer.setFax(lPhoneNumber);
                     }
                 }
             }
         } else {
             mLogger.debug("pPhones is empty, resetting the phone and fax number property");
             pCustomer.setPhone(null);
-            // TODO - set FAX
-            // pCustomer.setFax(null);
+            // TODO - pCustomer.setFax(null);
         }
     }
 
@@ -225,9 +223,9 @@ public class CustomerSubscriberService {
                 final Account lPrevWiseCustomer = pFilteredAccountsMap.get(lLocalCompNumber);
                 final String lPrevAccountEcomStatus = lPrevWiseCustomer.getAccountEcommerceStatus();
 
-                if ("Y".equals(lAccountEcomStatus) && "Y".equals(lPrevAccountEcomStatus)) {
+                if (Constants.ACCOUNT_ECOM_STATUS_Y.equals(lAccountEcomStatus) && Constants.ACCOUNT_ECOM_STATUS_Y.equals(lPrevAccountEcomStatus)) {
                     throw new ECMException(mResourceBundle.getString("duplicate.accountEcomStatus"));
-                } else if ("Y".equals(lAccountEcomStatus)) {
+                } else if (Constants.ACCOUNT_ECOM_STATUS_Y.equals(lAccountEcomStatus)) {
                     pFilteredAccountsMap.put(lLocalCompNumber, pWiseAccount);
                 }
             } else {

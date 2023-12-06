@@ -51,10 +51,6 @@ public class Customer {
     @Column(name = "wincca", length = 20)
     private String wincca;
 
-      // TODO- To check with Amritanshu
-//    @Column(name = "customer_stf", length = 20)
-//    private String customerStf;
-
     @OneToOne
     @JoinColumn(name = "win_default_company", referencedColumnName = "company_number")
     private Location winDefaultCompany;

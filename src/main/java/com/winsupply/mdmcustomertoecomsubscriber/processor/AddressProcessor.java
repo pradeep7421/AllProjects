@@ -7,7 +7,6 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.AddressRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
@@ -28,7 +27,6 @@ public class AddressProcessor {
      * @param pCustomer  - the Customer
      * @param pAddresses - the Addresses
      */
-    @Transactional
     public void importAddressesData(final Customer pCustomer, final List<Address> pAddresses) {
         if (pAddresses != null && !pAddresses.isEmpty()) {
             final boolean lIsShipAddrSet = setShippingAddress(pCustomer, pAddresses);

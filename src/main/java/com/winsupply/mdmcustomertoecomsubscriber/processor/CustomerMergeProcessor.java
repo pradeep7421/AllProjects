@@ -12,15 +12,13 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerResupplyRe
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListGroupRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListToCustomerRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Customer merge processor
@@ -54,41 +52,38 @@ public class CustomerMergeProcessor {
      * @param pCustomer    - the customer
      * @param pAtgAccounts - the ATG accounts
      */
-    @Transactional
     public void mergeCustomer(final Customer pCustomer, List<AtgAccount> pAtgAccounts) {
-        List<String> lOldCustomerIds = pAtgAccounts.stream().map(AtgAccount::getAtgSystemSrcId).toList();
-        List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMIdIn(lOldCustomerIds);
+        List<String> lOldCustomerECMIds = pAtgAccounts.stream().map(AtgAccount::getAtgSystemSrcId).toList();
 
-        if (lContacts != null && !lContacts.isEmpty()) {
-            final Set<String> lOldCustomerECMIds = associateContactsWithNewCustomer(pCustomer, lContacts);
-            mContactRepository.saveAll(lContacts);
+        if (!lOldCustomerECMIds.isEmpty()) {
+            mLogger.debug("lOldCustomerECMIds : {}", lOldCustomerECMIds);
+            for (final String lOldCustomerECMId : lOldCustomerECMIds) {
+                try {
+                    // delete old customer data
+                    Optional<Customer> lOldCustomerOpt = mCustomerRepository.findById(lOldCustomerECMId);
+                    lOldCustomerOpt.ifPresent(lOldCustomer -> {
+                        mCustomerResupplyRepository.deleteAllByCustomerECMId(lOldCustomerECMId);
+                        mCustomerAccountProcessor.resetCustomerAccountsData(lOldCustomerECMId);
+                        mCustomerAccountProcessor.deleteCustomerAddress(lOldCustomer);
+                        mCustomerRepository.save(lOldCustomer);
 
-            if (!lOldCustomerECMIds.isEmpty()) {
-                mLogger.debug("lOldCustomerECMIds : {}", lOldCustomerECMIds);
-                for (final String lOldCustomerECMId : lOldCustomerECMIds) {
-                    try {
-                        // delete old customer data
-                        Optional<Customer> lOldCustomerOpt = mCustomerRepository.findById(lOldCustomerECMId);
-                        lOldCustomerOpt.ifPresent(lOldCustomer -> {
-                            mCustomerResupplyRepository.deleteAllByCustomerECMId(lOldCustomerECMId);
-                            mCustomerAccountProcessor.resetCustomerData(lOldCustomerECMId);
-                            mCustomerAccountProcessor.deleteCustomerAddress(lOldCustomer);
-                            mCustomerRepository.save(lOldCustomer);
+                        List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMId(lOldCustomerECMId);
+                        if (!CollectionUtils.isEmpty(lContacts)) {
+                            associateContactsWithNewCustomer(pCustomer, lContacts);
+                        }
 
-                            // Check and Move existing quotes
-                            checkAndMoveExistingQuotes(pCustomer, lOldCustomerECMId);
-                            // Check and Move existing list group
-                            checkAndMoveExistingListGroups(pCustomer, lOldCustomerECMId);
-                            // Check and Move existing list
-                            checkAndMoveExistingLists(pCustomer, lOldCustomerECMId);
+                        // Check and Move existing quotes
+                        checkAndMoveExistingQuotes(pCustomer, lOldCustomerECMId);
+                        // Check and Move existing list group
+                        checkAndMoveExistingListGroups(pCustomer, lOldCustomerECMId);
+                        // Check and Move existing list
+                        checkAndMoveExistingLists(pCustomer, lOldCustomerECMId);
 
-                            mCustomerRepository.deleteById(lOldCustomerECMId);
-                        });
-                    } catch (final Exception lRepoException) {
-                        mLogger.error("Exception while deleting lOldCustomerECMId -> {}", lOldCustomerECMId);
-                        throw lRepoException;
-                    }
-
+                        mCustomerRepository.deleteById(lOldCustomerECMId);
+                    });
+                } catch (final Exception lRepoException) {
+                    mLogger.error("Exception while deleting lOldCustomerECMId -> {}", lOldCustomerECMId);
+                    throw lRepoException;
                 }
             }
         }
@@ -99,20 +94,13 @@ public class CustomerMergeProcessor {
      * This method associates contacts with new customer
      *
      * @param pCustomer - the Customer
-     * @param lContacts - the Contacts
-     * @return - Set<String>
+     * @param pContacts - the Contacts
      */
-    private Set<String> associateContactsWithNewCustomer(final Customer pCustomer, List<Contact> lContacts) {
-        final Set<String> lOldCustomerECMIds = new HashSet<>();
-        for (final Contact lContact : lContacts) {
-            final Customer lOldCustomerItem = lContact.getCustomer();
-            final String lOldCustomerECMId = lOldCustomerItem.getCustomerECMId();
-            if (!lOldCustomerECMId.equalsIgnoreCase(pCustomer.getCustomerECMId())) {
-                lOldCustomerECMIds.add(lOldCustomerECMId);
-            }
+    private void associateContactsWithNewCustomer(final Customer pCustomer, List<Contact> pContacts) {
+        for (final Contact lContact : pContacts) {
             lContact.setCustomer(pCustomer);
         }
-        return lOldCustomerECMIds;
+        mContactRepository.saveAll(pContacts);
     }
 
     /**

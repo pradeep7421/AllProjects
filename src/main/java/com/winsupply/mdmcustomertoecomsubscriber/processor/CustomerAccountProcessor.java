@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -66,7 +65,6 @@ public class CustomerAccountProcessor {
      * @param pFilteredAccountMap - the FilteredAccount Map
      * @throws ECMException - the ECMException
      */
-    @Transactional
     public void importCustomerAccountsData(final Customer pCustomer, final String pInterCompanyId, final Map<String, Account> pFilteredAccountMap)
             throws ECMException {
         final List<CustomerAccount> lCustomerAccounts = new ArrayList<>();
@@ -81,13 +79,7 @@ public class CustomerAccountProcessor {
                         + lInActiveCustomerSubAccount.getAccountNumber())
                 .toList();
 
-        //TODO - To check with Amritanshu
-        //resetCustomerData(lCustomerECMId);
-        mCustomerAccountRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        deleteSubAccountAddresses(lCustomerECMId);
-        mCustomerSubAccountRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        mCustomerLocationRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        mCustomerAccountNumberRepository.deleteAllByCustomerECMId(lCustomerECMId);
+        resetCustomerAccountsData(lCustomerECMId);
 
         if (pFilteredAccountMap.size() > 0) {
             final Location lWinDefaultCompany = pCustomer.getWinDefaultCompany();
@@ -151,50 +143,47 @@ public class CustomerAccountProcessor {
     /**
      * <b>resetCustomerData</b> - It resets the customer data
      *
-     * @param lCustomerECMId   - the CustomerECMId
+     * @param pCustomerECMId - the CustomerECMId
      */
-    @Transactional
-    public void resetCustomerData(final String lCustomerECMId) {
-        mCustomerAccountRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        //TODO- Check with Amritanshu
-        //deleteSubAccountAddresses(lCustomerECMId);
-        mCustomerSubAccountRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        mCustomerLocationRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        mCustomerAccountNumberRepository.deleteAllByCustomerECMId(lCustomerECMId);
+    public void resetCustomerAccountsData(final String pCustomerECMId) {
+        mCustomerAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);
+        deleteSubAccountAndAddress(pCustomerECMId);
+        mCustomerLocationRepository.deleteAllByCustomerECMId(pCustomerECMId);
+        mCustomerAccountNumberRepository.deleteAllByCustomerECMId(pCustomerECMId);
+    }
+
+    /**
+     * <b>deleteSubAccountAndAddress</b> - It deletes the customer Sub Accounts and
+     * addresses
+     *
+     * @param pCustomerECMId - the Customer ECM Id
+     */
+    private void deleteSubAccountAndAddress(final String pCustomerECMId) {
+        List<CustomerSubAccount> lSubAccounts = mCustomerSubAccountRepository.findByCustomerCustomerECMId(pCustomerECMId);
+        if (!CollectionUtils.isEmpty(lSubAccounts)) {
+            List<Long> lAddressIds = lSubAccounts.stream().map(CustomerSubAccount::getCustomerAddress).map(Address::getId).toList();
+            mCustomerSubAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);
+            mAddressRepository.deleteAllById(lAddressIds);
+        }
     }
 
     /**
      * <b>deleteCustomerAddress</b> - It deletes the customer shipping or billing
      * address
      *
-     * @param pCustomer  - the Customer
+     * @param pCustomer - the Customer
      */
-    @Transactional
     public void deleteCustomerAddress(final Customer pCustomer) {
         Address lDefaultBillingAddress = pCustomer.getDefaultBillingAddress();
         if (null != lDefaultBillingAddress) {
+            pCustomer.setDefaultBillingAddress(null);
             mAddressRepository.deleteById(lDefaultBillingAddress.getId());
         }
 
         Address lDefaultShippingAddress = pCustomer.getDefaultShippingAddress();
         if (null != lDefaultShippingAddress) {
+            pCustomer.setDefaultShippingAddress(null);
             mAddressRepository.deleteById(lDefaultShippingAddress.getId());
-        }
-    }
-
-    /**
-     * <b>deleteSubAccountAddresses</b> - it deletes the addresses associated with
-     * sub accounts
-     *
-     * @param pCustomerECMId - the Customer ECM Id
-     */
-    private void deleteSubAccountAddresses(String pCustomerECMId) {
-        List<CustomerSubAccount> lSubAccounts = mCustomerSubAccountRepository.findByCustomerCustomerECMId(pCustomerECMId);
-        if (!CollectionUtils.isEmpty(lSubAccounts)) {
-            List<Long> lAddressIds = lSubAccounts.stream().map(CustomerSubAccount::getCustomerAddress).map(Address::getId).toList();
-            mLogger.debug("Deleted address Ids: {}", lAddressIds);
-            mAddressRepository.deleteAllById(lAddressIds);
-            mCustomerSubAccountRepository.saveAll(lSubAccounts);
         }
     }
 

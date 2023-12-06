@@ -18,6 +18,6 @@ public interface ContactRepository extends JpaRepository<Contact, String> {
 
     Optional<Contact> findByLogin(@Param("email") String pEmail);
 
-    List<Contact> findByCustomerCustomerECMIdIn(List<String> pOldCustomerIds);
+    List<Contact> findByCustomerCustomerECMId(String pCustomerECMId);
 
 }
