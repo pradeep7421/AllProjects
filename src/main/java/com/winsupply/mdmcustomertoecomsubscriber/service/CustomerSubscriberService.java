@@ -117,8 +117,9 @@ public class CustomerSubscriberService {
         lCustomer.setFederalTaxId(getFederalTaxId(pCustomerMessageVO.getFederalIds()));
         lCustomer.setWincca(pCustomerMessageVO.getWinCCA());
 
-        mCustomerResupplyRepository.deleteAllByCustomerECMId(lCustomerECMId);
+        lCustomer = mCustomerRepository.save(lCustomer);
 
+        mCustomerResupplyRepository.deleteAllByCustomerECMId(lCustomerECMId);
         if (pCustomerMessageVO.getVmiLocations() != null && !pCustomerMessageVO.getVmiLocations().isEmpty()) {
             final List<CustomerResupply> lResupplyLocations = pCustomerMessageVO.getVmiLocations().stream()
                     .map(lVmiLocation -> createResupplyLocation(lCustomerECMId, lVmiLocation)).toList();
@@ -127,7 +128,6 @@ public class CustomerSubscriberService {
 
         final Map<String, Account> lFilteredAccounts = validateAndFilterAccounts(pCustomerMessageVO.getWiseAccounts());
         final String lInterCompanyId = pCustomerMessageVO.getInterCompanyId();
-        lCustomer = mCustomerRepository.save(lCustomer);
 
         mCustomerAccountProcessor.importCustomerAccountsData(lCustomer, lInterCompanyId, lFilteredAccounts);
 

@@ -228,7 +228,7 @@ public class ContactProcessor {
                         } else {
                             lAddress = pContactEntity.getAddress();
                         }
-    
+
                         OrderEmailAddress lOrderEmailAddress = new OrderEmailAddress();
                         lOrderEmailAddress.setAddressId(lAddress.getId());
                         lOrderEmailAddress.setOrderEmailAddress(lContactEmail.getEmailAddress());
