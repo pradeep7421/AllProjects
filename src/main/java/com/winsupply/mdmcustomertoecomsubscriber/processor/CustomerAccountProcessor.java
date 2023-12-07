@@ -71,25 +71,19 @@ public class CustomerAccountProcessor {
         final String lCustomerECMId = pCustomer.getCustomerECMId();
         final boolean lIsInterCompanyCustomerMessage = StringUtils.hasText(pInterCompanyId) ? Boolean.TRUE : Boolean.FALSE;
 
-        final Short lInActive = 0;
-        final List<CustomerSubAccount> lInActiveCustomerSubAccounts = mCustomerSubAccountRepository
-                .findByCustomerCustomerECMIdAndStatusId(lCustomerECMId, lInActive);
-        final List<String> lInActiveCustomerSubAccountList = lInActiveCustomerSubAccounts.stream()
-                .map(lInActiveCustomerSubAccount -> lInActiveCustomerSubAccount.getLocation().getCompanyNumber() + "-"
-                        + lInActiveCustomerSubAccount.getAccountNumber())
-                .toList();
+        final List<String> lInActiveCustomerSubAccounts = getInactiveSubAccounts(lCustomerECMId);
 
         resetCustomerAccountsData(lCustomerECMId);
 
-        if (pFilteredAccountMap.size() > 0) {
+        if (null != pFilteredAccountMap && !pFilteredAccountMap.isEmpty()) {
             final Location lWinDefaultCompany = pCustomer.getWinDefaultCompany();
             final Set<String> lAccountNumbers = new HashSet<>();
             final List<String> lCompanyNumbers = new ArrayList<>();
             int lIndex = 0;
             Location lDefaultLC = null;
 
-            for (final Map.Entry<String, Account> lEntry : pFilteredAccountMap.entrySet()) {
-                final Account lAccount = lEntry.getValue();
+            for (final Map.Entry<String, Account> lFilteredAccount : pFilteredAccountMap.entrySet()) {
+                final Account lAccount = lFilteredAccount.getValue();
                 final String lCompanyNumber = lAccount.getCompanyNumber();
 
                 final Optional<Location> lLocation = mLocationRepository.findById(lCompanyNumber);
@@ -111,7 +105,7 @@ public class CustomerAccountProcessor {
                     lCustomerAccounts.addAll(lCustomerAccountAttributes);
                 }
 
-                mCustomerSubAccountProcessor.processSubAccountsData(lAccount, lInActiveCustomerSubAccountList, pCustomer);
+                mCustomerSubAccountProcessor.processSubAccountsData(lAccount, lInActiveCustomerSubAccounts, pCustomer);
                 lIndex++;
             }
             if (lWinDefaultCompany == null || !lCompanyNumbers.contains(lWinDefaultCompany.getCompanyNumber())) {
@@ -120,16 +114,9 @@ public class CustomerAccountProcessor {
             if (!lCustomerAccounts.isEmpty()) {
                 mCustomerAccountRepository.saveAll(lCustomerAccounts);
             }
-            if (!lAccountNumbers.isEmpty()) {
-                final List<CustomerAccountNumber> lCustomerAccountNumbers = lAccountNumbers.stream()
-                        .map(lAccountNumber -> createCustomerAccountNumber(lCustomerECMId, lAccountNumber)).toList();
-                mCustomerAccountNumberRepository.saveAll(lCustomerAccountNumbers);
-            }
-            if (!lCompanyNumbers.isEmpty()) {
-                final List<CustomerLocation> lCustomerLocations = lCompanyNumbers.stream()
-                        .map(lCompanyNumber -> createCustomerLocation(lCustomerECMId, lCompanyNumber)).toList();
-                mCustomerLocationRepository.saveAll(lCustomerLocations);
-            }
+
+            setCustomerAccountNumbers(lAccountNumbers, lCustomerECMId);
+            setCustomerLocations(lCompanyNumbers, lCustomerECMId);
 
             // Checking for default LC
             if (pCustomer.getWinDefaultCompany() == null) {
@@ -138,6 +125,56 @@ public class CustomerAccountProcessor {
         } else {
             mLogger.info("Reset Customer WISE account data since accounts are null or empty :: lCustomerEcmId {}", lCustomerECMId);
         }
+    }
+
+    /**
+     * <b>setCustomerAccountNumbers</b> - it sets the customer account numbers
+     *
+     * @param pAccountNumbers - the Account Numbers
+     * @param pCustomerECMId - the Customer ECM Id
+     */
+    private void setCustomerAccountNumbers(final Set<String> pAccountNumbers, final String pCustomerECMId) {
+        if (!pAccountNumbers.isEmpty()) {
+            final List<CustomerAccountNumber> lCustomerAccountNumbers = pAccountNumbers.stream()
+                    .map(lAccountNumber -> createCustomerAccountNumber(pCustomerECMId, lAccountNumber)).toList();
+            mCustomerAccountNumberRepository.saveAll(lCustomerAccountNumbers);
+        }
+    }
+
+    /**
+     * <b>setCustomerLocations</b> - it sets the Customer Locations
+     *
+     * @param pCompanyNumbers - the Company Numbers
+     * @param pCustomerECMId  - the Customer ECM Id
+     */
+    private void setCustomerLocations(final List<String> pCompanyNumbers, final String pCustomerECMId) {
+        if (!pCompanyNumbers.isEmpty()) {
+            final List<CustomerLocation> lCustomerLocations = pCompanyNumbers.stream()
+                    .map(lCompanyNumber -> createCustomerLocation(pCustomerECMId, lCompanyNumber)).toList();
+            mCustomerLocationRepository.saveAll(lCustomerLocations);
+        }
+    }
+
+    /**
+     * <b>getInactiveSubAccounts</b> - It returns the Inactive subAccounts of customer
+     *
+     * @param lCustomerECMId - the Customer ECM Id
+     * @return - List<String>
+     */
+    private List<String> getInactiveSubAccounts(final String lCustomerECMId) {
+        final Short lInActive = 0;
+        final List<CustomerSubAccount> lInActiveCustomerSubAccounts = mCustomerSubAccountRepository.findByCustomerCustomerECMIdAndStatusId(
+                lCustomerECMId, lInActive);
+
+        List<String> lInActiveCustomerSubAccountList = null;
+        if (null != lInActiveCustomerSubAccounts && !lInActiveCustomerSubAccounts.isEmpty()) {
+            lInActiveCustomerSubAccountList = lInActiveCustomerSubAccounts.stream()
+                    .map(lInActiveCustomerSubAccount -> lInActiveCustomerSubAccount.getLocation().getCompanyNumber() + "-"
+                            + lInActiveCustomerSubAccount.getAccountNumber()).toList();
+        }
+
+        mLogger.debug("lInActiveCustomerSubAccountList : {}", lInActiveCustomerSubAccountList);
+        return lInActiveCustomerSubAccountList;
     }
 
     /**

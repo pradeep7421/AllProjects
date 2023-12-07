@@ -37,14 +37,14 @@ public class CustomerSubAccountProcessor {
     private final AddressRepository mAddressRepository;
 
     /**
-     * This method process the sub account data
+     * This method process the subAccount data
      *
      * @param pAccount                        - the Account
-     * @param pInActiveCustomerSubAccountList - InActive Customer SubAccount List
+     * @param pInActiveCustomerSubAccounts - InActive Customer SubAccount List
      * @param pCustomer                       - the Customer
      */
     @Transactional
-    public void processSubAccountsData(final Account pAccount, List<String> pInActiveCustomerSubAccountList, Customer pCustomer) {
+    public void processSubAccountsData(final Account pAccount, List<String> pInActiveCustomerSubAccounts, Customer pCustomer) {
         List<CustomerSubAccount> lCustomerSubAccounts = new ArrayList<>();
         List<Account.SubAccount> lSubAccounts = pAccount.getWiseSubAccounts();
         for (final SubAccount lSubAccount : lSubAccounts) {
@@ -56,7 +56,7 @@ public class CustomerSubAccountProcessor {
 
             lCustomerSubAccount.setAccountNumber(lSubAccount.getSubAccountNumber());
             lCustomerSubAccount.setSubAccountName(lSubAccount.getFullName());
-            if (pInActiveCustomerSubAccountList.contains(lSubAccountId)) {
+            if (null != pInActiveCustomerSubAccounts && pInActiveCustomerSubAccounts.contains(lSubAccountId)) {
                 lCustomerSubAccount.setStatusId((short) 0);
             } else {
                 lCustomerSubAccount.setStatusId((short) 1);
@@ -86,7 +86,7 @@ public class CustomerSubAccountProcessor {
     }
 
     /**
-     * This method will update the sub account address
+     * This method will update the subAccount address
      *
      * @param pCustomerSubAccount  - the Customer SubAccount
      * @param pSubAccountAddresses - SubAccount Addresses

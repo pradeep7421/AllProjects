@@ -82,42 +82,49 @@ public class ContactProcessor {
         for (CustomerMessageVO.Contact lContactVO : lContacts) {
             final String lUserId = lContactVO.getUserId();
             if (StringUtils.hasText(lUserId) && Utility.isValidEmail(lUserId)) {
-                final String lFirstName = lContactVO.getFirstName();
-                final String lLastName = lContactVO.getLastName();
-                if (!StringUtils.hasText(lFirstName) || !StringUtils.hasText(lLastName)) {
-                    mLogger.error("First Name or Last Name is missing for contact with id : {}", lContactVO.getContactEcmId());
-                } else {
-                    // TODO - need to delete contact based on contactAtgAccounts
-                    Optional<Contact> lContactOpt = mContactRepository.findByLogin(lUserId);
-                    Contact lContactEntity;
-                    if (lContactOpt.isPresent()) {
-                        lContactEntity = lContactOpt.get();
-                    } else {
-                        lContactEntity = new Contact();
-                        lContactEntity.setLogin(lUserId);
-                        lContactEntity.setContactECMId(lContactVO.getContactEcmId());
-                    }
-
-                    // Reset the contact data here
-
-                    if ("N".equalsIgnoreCase(lContactVO.getContactECommerceStatus())) {
-                        lContactEntity.setEcmActive((short) 0);
-                        continue;
-                    } else {
-                        lContactEntity.setEcmActive((short) 1);
-                    }
-
-                    if (!StringUtils.hasText(pCustomerMessageVO.getInterCompanyId())) {
-                        mLogger.debug("Setting role as lcAdmin for LC Customer Feed");
-                        lContactVO.setRole(Constants.LC_ADMIN_ROLE);
-                    }
-
-                    lContactEntity.setCustomer(pCustomer);
-                    importContactData(lContactEntity, lContactVO);
-                }
+                processContactData(pCustomer, pCustomerMessageVO, lContactVO);
             } else {
                 mLogger.debug("Skipping Contact with ContactECMId : {}, due to invalid userId : {}", lContactVO.getContactEcmId(), lUserId);
             }
+        }
+    }
+
+    /**
+     * <b>processContactData</b> - it process the contact's data
+     *
+     * @param pCustomer - the Customer
+     * @param pCustomerMessageVO - the Customer Message
+     * @param pContactVO - Contact
+     */
+    private void processContactData(Customer pCustomer, CustomerMessageVO pCustomerMessageVO, CustomerMessageVO.Contact pContactVO) {
+        final String lFirstName = pContactVO.getFirstName();
+        final String lLastName = pContactVO.getLastName();
+        if (!StringUtils.hasText(lFirstName) || !StringUtils.hasText(lLastName)) {
+            mLogger.error("First Name or Last Name is missing for contact with id : {}", pContactVO.getContactEcmId());
+        } else {
+            // TODO - need to delete contact based on contactAtgAccounts
+            Optional<Contact> lContactOpt = mContactRepository.findByLogin(pContactVO.getUserId());
+            Contact lContactEntity;
+            if (lContactOpt.isPresent()) {
+                lContactEntity = lContactOpt.get();
+                if ("N".equalsIgnoreCase(pContactVO.getContactECommerceStatus())) {
+                    lContactEntity.setEcmActive((short) 0);
+                    mContactRepository.save(lContactEntity);
+                    return;
+                }
+            } else {
+                lContactEntity = new Contact();
+                lContactEntity.setLogin(pContactVO.getUserId());
+                lContactEntity.setContactECMId(pContactVO.getContactEcmId());
+            }
+
+            if (!StringUtils.hasText(pCustomerMessageVO.getInterCompanyId())) {
+                mLogger.debug("Setting role as lcAdmin for LC Customer Feed");
+                pContactVO.setRole(Constants.LC_ADMIN_ROLE);
+            }
+
+            lContactEntity.setCustomer(pCustomer);
+            importContactData(lContactEntity, pContactVO);
         }
     }
 
