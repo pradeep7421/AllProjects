@@ -124,6 +124,7 @@ public class ContactProcessor {
             }
 
             lContactEntity.setCustomer(pCustomer);
+            lContactEntity = mContactRepository.save(lContactEntity);
             importContactData(lContactEntity, pContactVO);
         }
     }
