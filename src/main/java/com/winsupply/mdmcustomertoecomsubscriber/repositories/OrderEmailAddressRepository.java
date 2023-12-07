@@ -2,6 +2,7 @@ package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 
 import com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -13,4 +14,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OrderEmailAddressRepository extends JpaRepository<OrderEmailAddress, Integer> {
 
+    /**
+     * <b>deleteAllByAddressId</b> - It delete phone based on address
+     *
+     * @param pAddressId - the Address Id
+     */
+    @Modifying
+    void deleteAllByAddressId(Long pAddressId);
 }

@@ -17,7 +17,6 @@ public class Constants {
 
     public static final String PROCUREMENT_MANAGER_ROLE = "procurementmanager";
     public static final String LC_ADMIN_ROLE = "lcadmin";
-    public static final String COMMA = ",";
     public static final String ON_EMAIL_TYPE = "ON-EMAIL";
     public static final String EW_EMAIL_TYPE = "EW";
     public static final String SHIP_TO = "Ship to";

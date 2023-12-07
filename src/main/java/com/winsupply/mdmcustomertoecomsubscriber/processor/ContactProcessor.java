@@ -133,6 +133,13 @@ public class ContactProcessor {
         pContactEntity.setLastName(pContact.getLastName());
         pContactEntity.setEcmActive((short) 1);
 
+        mContactEmailPreferenceRepository.deleteAllByIdContactEcmId(pContactEntity.getContactECMId());
+        mContactIndustryPreferenceRepository.deleteAllByIdContactEcmId(pContactEntity.getContactECMId());
+        if (null != pContactEntity.getAddress()) {
+            mPhoneRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
+            mOrderEmailAddressRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
+        }
+
         Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(pContact);
         populateRole(pContactEntity, pContact);
         Set<ContactIndustryPreference> lContactIndustryPreferenceSet = createContactIndustryPreferences(pContact);
@@ -210,12 +217,20 @@ public class ContactProcessor {
         Set<OrderEmailAddress> lOrderEmailAddresses = null;
         if (null != pContactVO.getContactEmails() && !pContactVO.getContactEmails().isEmpty()) {
             lOrderEmailAddresses = new HashSet<>();
-            // TODO - check with Amritanshu for login improvement with property isPreferredContactMethod
             for (final ContactEmail lContactEmail : pContactVO.getContactEmails()) {
                 switch (lContactEmail.getEmailType()) {
                     case Constants.ON_EMAIL_TYPE:
+                        com.winsupply.mdmcustomertoecomsubscriber.entities.Address lAddress;
+                        if (null == pContactEntity.getAddress()) {
+                            lAddress = new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
+                            lAddress = mAddressRepository.save(lAddress);
+                            pContactEntity.setAddress(lAddress);
+                        } else {
+                            lAddress = pContactEntity.getAddress();
+                        }
+    
                         OrderEmailAddress lOrderEmailAddress = new OrderEmailAddress();
-                        lOrderEmailAddress.setAddressId(pContactEntity.getAddress().getId());
+                        lOrderEmailAddress.setAddressId(lAddress.getId());
                         lOrderEmailAddress.setOrderEmailAddress(lContactEmail.getEmailAddress());
                         lOrderEmailAddresses.add(lOrderEmailAddress);
                         break;
@@ -270,7 +285,7 @@ public class ContactProcessor {
      */
     private Set<ContactIndustryPreference> createContactIndustryPreferences(CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getIndustries() && !pContactVO.getIndustries().isEmpty()) {
-            return Arrays.stream(pContactVO.getIndustries().split(Constants.COMMA)).map(lEmailPreference -> {
+            return Arrays.stream(pContactVO.getIndustries().split(",")).map(lEmailPreference -> {
                 Optional<Industry> lIndustryOpt = mIndustryRepository.findByIndustryDesc(lEmailPreference);
                 if (lIndustryOpt.isPresent()) {
                     ContactIndustryPreference lContactIndustryPreference = new ContactIndustryPreference();

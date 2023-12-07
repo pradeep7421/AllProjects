@@ -3,6 +3,7 @@ package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactIndustryPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ContactIndustryPreferenceId;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -14,4 +15,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ContactIndustryPreferenceRepository extends JpaRepository<ContactIndustryPreference, ContactIndustryPreferenceId> {
 
+    /**
+     * <b>deleteByIdContactEcmId</b> - it deletes the Contact Industry Preference
+     * based on Contact ECM Id
+     *
+     * @param pContactEcmId - the Contact ECM Id
+     */
+    @Modifying
+    void deleteAllByIdContactEcmId(String pContactEcmId);
 }
