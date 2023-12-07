@@ -68,6 +68,6 @@ public class Contact {
     private ContactRole role;
 
     @OneToOne
-    @JoinColumn(name = "contact_address_id", referencedColumnName = "address_id", nullable = false)
+    @JoinColumn(name = "contact_address_id", referencedColumnName = "address_id")
     private Address address;
 }

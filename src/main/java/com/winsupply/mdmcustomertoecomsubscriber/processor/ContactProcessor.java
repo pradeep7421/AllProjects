@@ -118,12 +118,13 @@ public class ContactProcessor {
                 lContactEntity.setContactECMId(pContactVO.getContactEcmId());
             }
 
-            if (!StringUtils.hasText(pCustomerMessageVO.getInterCompanyId())) {
+            if (StringUtils.hasText(pCustomerMessageVO.getInterCompanyId())) {
                 mLogger.debug("Setting role as lcAdmin for LC Customer Feed");
                 pContactVO.setRole(Constants.LC_ADMIN_ROLE);
             }
 
             lContactEntity.setCustomer(pCustomer);
+            populateRole(lContactEntity, pContactVO);
             lContactEntity = mContactRepository.save(lContactEntity);
             importContactData(lContactEntity, pContactVO);
         }
@@ -149,7 +150,6 @@ public class ContactProcessor {
         }
 
         Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(pContact);
-        populateRole(pContactEntity, pContact);
         Set<ContactIndustryPreference> lContactIndustryPreferenceSet = createContactIndustryPreferences(pContact);
         Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> lPhoneNumbersSet = createPhones(pContactEntity, pContact);
         Set<com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress> lOrderEmailAddressSet = createOrderEmailAddress(pContactEntity,
