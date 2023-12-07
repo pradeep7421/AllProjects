@@ -65,7 +65,6 @@ public class CustomerMergeProcessor {
                         mCustomerResupplyRepository.deleteAllByCustomerECMId(lOldCustomerECMId);
                         mCustomerAccountProcessor.resetCustomerAccountsData(lOldCustomerECMId);
                         mCustomerAccountProcessor.deleteCustomerAddress(lOldCustomer);
-                        mCustomerRepository.save(lOldCustomer);
 
                         List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMId(lOldCustomerECMId);
                         if (!CollectionUtils.isEmpty(lContacts)) {
@@ -79,8 +78,9 @@ public class CustomerMergeProcessor {
                         // Check and Move existing list
                         checkAndMoveExistingLists(pCustomer, lOldCustomerECMId);
 
-                        mCustomerRepository.deleteById(lOldCustomerECMId);
+                        mCustomerRepository.deleteByCustomerECMId(lOldCustomerECMId);
                     });
+
                 } catch (final Exception lRepoException) {
                     mLogger.error("Exception while deleting lOldCustomerECMId -> {}", lOldCustomerECMId);
                     throw lRepoException;

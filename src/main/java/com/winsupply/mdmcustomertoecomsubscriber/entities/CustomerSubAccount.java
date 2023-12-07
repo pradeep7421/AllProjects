@@ -1,5 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.entities;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,7 +37,7 @@ public class CustomerSubAccount {
     @JoinColumn(name = "company_number", referencedColumnName = "company_number", nullable = false)
     private Location location;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "customer_ecm_id", referencedColumnName = "customer_ecm_id", nullable = false)
     private Customer customer;
 
