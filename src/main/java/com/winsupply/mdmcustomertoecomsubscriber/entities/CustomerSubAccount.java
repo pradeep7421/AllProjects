@@ -37,7 +37,7 @@ public class CustomerSubAccount {
     @JoinColumn(name = "company_number", referencedColumnName = "company_number", nullable = false)
     private Location location;
 
-    @OneToOne(cascade = CascadeType.PERSIST)
+    @OneToOne
     @JoinColumn(name = "customer_ecm_id", referencedColumnName = "customer_ecm_id", nullable = false)
     private Customer customer;
 
@@ -59,7 +59,7 @@ public class CustomerSubAccount {
     @Column(name = "credit_status_code", length = 2)
     private String creditStatusCode;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "customer_address", referencedColumnName = "address_id", nullable = false)
     private Address customerAddress;
 

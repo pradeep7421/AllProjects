@@ -2,7 +2,6 @@ package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerAccountNumber;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerAccountNumberId;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

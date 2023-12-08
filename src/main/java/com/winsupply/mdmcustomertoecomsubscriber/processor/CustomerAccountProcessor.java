@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -96,8 +95,7 @@ public class CustomerAccountProcessor {
 
                 // Setting the default LC
                 mLogger.debug("lIsInterCompanyMessage: {}, pInterCompanyId : {}, Index : {}", lIsInterCompanyMessage, pInterCompanyId, lIndex);
-                if ((!lIsInterCompanyMessage && lIndex == 0)
-                        || (lIsInterCompanyMessage && pInterCompanyId.equalsIgnoreCase(lCompanyNumber))) {
+                if ((!lIsInterCompanyMessage && lIndex == 0) || (lIsInterCompanyMessage && pInterCompanyId.equalsIgnoreCase(lCompanyNumber))) {
                     lDefaultLC = lLocation.get();
                 }
 
@@ -132,7 +130,7 @@ public class CustomerAccountProcessor {
      * <b>setCustomerAccountNumbers</b> - it sets the customer account numbers
      *
      * @param pAccountNumbers - the Account Numbers
-     * @param pCustomerECMId - the Customer ECM Id
+     * @param pCustomerECMId  - the Customer ECM Id
      */
     private void setCustomerAccountNumbers(final Set<String> pAccountNumbers, final String pCustomerECMId) {
         if (!pAccountNumbers.isEmpty()) {
@@ -157,21 +155,23 @@ public class CustomerAccountProcessor {
     }
 
     /**
-     * <b>getInactiveSubAccounts</b> - It returns the Inactive subAccounts of customer
+     * <b>getInactiveSubAccounts</b> - It returns the Inactive subAccounts of
+     * customer
      *
      * @param lCustomerECMId - the Customer ECM Id
      * @return - List<String>
      */
     private List<String> getInactiveSubAccounts(final String lCustomerECMId) {
         final Short lInActive = 0;
-        final List<CustomerSubAccount> lInActiveCustomerSubAccounts = mCustomerSubAccountRepository.findByCustomerCustomerECMIdAndStatusId(
-                lCustomerECMId, lInActive);
+        final List<CustomerSubAccount> lInActiveCustomerSubAccounts = mCustomerSubAccountRepository
+                .findByCustomerCustomerECMIdAndStatusId(lCustomerECMId, lInActive);
 
         List<String> lInActiveCustomerSubAccountList = null;
         if (null != lInActiveCustomerSubAccounts && !lInActiveCustomerSubAccounts.isEmpty()) {
             lInActiveCustomerSubAccountList = lInActiveCustomerSubAccounts.stream()
                     .map(lInActiveCustomerSubAccount -> lInActiveCustomerSubAccount.getLocation().getCompanyNumber() + "-"
-                            + lInActiveCustomerSubAccount.getAccountNumber()).toList();
+                            + lInActiveCustomerSubAccount.getAccountNumber())
+                    .toList();
         }
 
         mLogger.debug("lInActiveCustomerSubAccountList : {}", lInActiveCustomerSubAccountList);
@@ -197,12 +197,7 @@ public class CustomerAccountProcessor {
      * @param pCustomerECMId - the Customer ECM Id
      */
     private void deleteSubAccountAndAddress(final String pCustomerECMId) {
-        List<CustomerSubAccount> lSubAccounts = mCustomerSubAccountRepository.findByCustomerCustomerECMId(pCustomerECMId);
-        if (!CollectionUtils.isEmpty(lSubAccounts)) {
-            List<Long> lAddressIds = lSubAccounts.stream().map(CustomerSubAccount::getCustomerAddress).map(Address::getId).toList();
-            mCustomerSubAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);
-            mAddressRepository.deleteAllById(lAddressIds);
-        }
+        mCustomerSubAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);
     }
 
     /**

@@ -49,10 +49,10 @@ public class CustomerMergeProcessor {
     /**
      * This method will merge the old customer data with new customer
      *
-     * @param pCustomer    - the customer
+     * @param pNewCustomer - the customer
      * @param pAtgAccounts - the ATG accounts
      */
-    public void mergeCustomer(final Customer pCustomer, List<AtgAccount> pAtgAccounts) {
+    public void mergeCustomer(final Customer pNewCustomer, List<AtgAccount> pAtgAccounts) {
         List<String> lOldCustomerECMIds = pAtgAccounts.stream().map(AtgAccount::getAtgSystemSrcId).toList();
 
         if (!lOldCustomerECMIds.isEmpty()) {
@@ -68,17 +68,17 @@ public class CustomerMergeProcessor {
 
                         List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMId(lOldCustomerECMId);
                         if (!CollectionUtils.isEmpty(lContacts)) {
-                            associateContactsWithNewCustomer(pCustomer, lContacts);
+                            associateContactsWithNewCustomer(pNewCustomer, lContacts);
                         }
 
                         // Check and Move existing quotes
-                        checkAndMoveExistingQuotes(pCustomer, lOldCustomerECMId);
+                        checkAndMoveExistingQuotes(pNewCustomer, lOldCustomerECMId);
                         // Check and Move existing list group
-                        checkAndMoveExistingListGroups(pCustomer, lOldCustomerECMId);
+                        checkAndMoveExistingListGroups(pNewCustomer, lOldCustomerECMId);
                         // Check and Move existing list
-                        checkAndMoveExistingLists(pCustomer, lOldCustomerECMId);
+                        checkAndMoveExistingLists(pNewCustomer, lOldCustomerECMId);
 
-                        mCustomerRepository.deleteByCustomerECMId(lOldCustomerECMId);
+                        mCustomerRepository.deleteById(lOldCustomerECMId);
                     });
 
                 } catch (final Exception lRepoException) {
