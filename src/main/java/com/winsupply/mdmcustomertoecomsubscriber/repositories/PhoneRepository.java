@@ -2,7 +2,6 @@ package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Phone;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -19,6 +18,5 @@ public interface PhoneRepository extends JpaRepository<Phone, Integer> {
      *
      * @param pAddressId - the Address Id
      */
-    @Modifying
     void deleteAllByAddressId(Long pAddressId);
 }

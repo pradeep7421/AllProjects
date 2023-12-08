@@ -3,7 +3,6 @@ package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactEmailPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ContactEmailPreferenceId;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 
 /**
  * Contact Email Preference Repository
@@ -18,7 +17,6 @@ public interface ContactEmailPreferenceRepository extends JpaRepository<ContactE
      *
      * @param pContactEcmId - the Contact ECM Id
      */
-    @Modifying
     void deleteAllByIdContactEcmId(String pContactEcmId);
 
 }
