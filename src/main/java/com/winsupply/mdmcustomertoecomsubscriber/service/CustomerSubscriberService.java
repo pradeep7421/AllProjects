@@ -137,7 +137,7 @@ public class CustomerSubscriberService {
 
         mAddressProcessor.importAddressesData(lCustomer, pCustomerMessageVO.getAddresses());
 
-        return mCustomerRepository.save(lCustomer);
+        return lCustomer;
     }
 
     /**

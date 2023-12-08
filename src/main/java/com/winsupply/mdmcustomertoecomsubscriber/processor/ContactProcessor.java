@@ -167,7 +167,7 @@ public class ContactProcessor {
         if (!CollectionUtils.isEmpty(lOrderEmailAddressSet)) {
             mOrderEmailAddressRepository.saveAll(lOrderEmailAddressSet);
         }
-        mContactRepository.save(pContactEntity);
+
     }
 
     /**
