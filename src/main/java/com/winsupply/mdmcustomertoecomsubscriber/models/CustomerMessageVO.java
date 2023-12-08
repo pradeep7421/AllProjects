@@ -25,7 +25,8 @@ public class CustomerMessageVO {
 
     private String proRewardsId;
 
-    private List<String> vmiLocations;
+    @JsonProperty("vmiLocations")
+    private List<String> resupplyLocations;
 
     private String winCCA;
 

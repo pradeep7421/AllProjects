@@ -120,8 +120,8 @@ public class CustomerSubscriberService {
         lCustomer = mCustomerRepository.save(lCustomer);
 
         mCustomerResupplyRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        if (pCustomerMessageVO.getVmiLocations() != null && !pCustomerMessageVO.getVmiLocations().isEmpty()) {
-            final List<CustomerResupply> lResupplyLocations = pCustomerMessageVO.getVmiLocations().stream()
+        if (pCustomerMessageVO.getResupplyLocations() != null && !pCustomerMessageVO.getResupplyLocations().isEmpty()) {
+            final List<CustomerResupply> lResupplyLocations = pCustomerMessageVO.getResupplyLocations().stream()
                     .map(lVmiLocation -> createResupplyLocation(lCustomerECMId, lVmiLocation)).toList();
             mCustomerResupplyRepository.saveAll(lResupplyLocations);
         }
