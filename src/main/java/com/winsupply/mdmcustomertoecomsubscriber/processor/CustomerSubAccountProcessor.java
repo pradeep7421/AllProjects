@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -30,6 +32,8 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class CustomerSubAccountProcessor {
 
+    private final Logger mLogger = LoggerFactory.getLogger(this.getClass());
+
     private final LocationRepository mLocationRepository;
 
     private final CustomerSubAccountRepository mCustomerSubAccountRepository;
@@ -39,9 +43,9 @@ public class CustomerSubAccountProcessor {
     /**
      * This method process the subAccount data
      *
-     * @param pAccount                        - the Account
+     * @param pAccount                     - the Account
      * @param pInActiveCustomerSubAccounts - InActive Customer SubAccount List
-     * @param pCustomer                       - the Customer
+     * @param pCustomer                    - the Customer
      */
     @Transactional
     public void processSubAccountsData(final Account pAccount, List<String> pInActiveCustomerSubAccounts, Customer pCustomer) {
@@ -49,6 +53,7 @@ public class CustomerSubAccountProcessor {
         List<Account.SubAccount> lSubAccounts = pAccount.getWiseSubAccounts();
         for (final SubAccount lSubAccount : lSubAccounts) {
             final String lSubAccountId = pAccount.getCompanyNumber() + "-" + lSubAccount.getSubAccountNumber();
+            mLogger.debug("processing subAccount with Id: {}", lSubAccountId);
             CustomerSubAccount lCustomerSubAccount = new CustomerSubAccount();
             lCustomerSubAccount.setCustomer(pCustomer);
             final Optional<Location> lLocationOpt = mLocationRepository.findById(pAccount.getCompanyNumber());

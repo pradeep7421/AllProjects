@@ -69,7 +69,7 @@ public class CustomerAccountProcessor {
             throws ECMException {
         final List<CustomerAccount> lCustomerAccounts = new ArrayList<>();
         final String lCustomerECMId = pCustomer.getCustomerECMId();
-        final boolean lIsInterCompanyCustomerMessage = StringUtils.hasText(pInterCompanyId) ? Boolean.TRUE : Boolean.FALSE;
+        final boolean lIsInterCompanyMessage = StringUtils.hasText(pInterCompanyId) ? Boolean.TRUE : Boolean.FALSE;
 
         final List<String> lInActiveCustomerSubAccounts = getInactiveSubAccounts(lCustomerECMId);
 
@@ -95,8 +95,9 @@ public class CustomerAccountProcessor {
                 lCompanyNumbers.add(lCompanyNumber);
 
                 // Setting the default LC
-                if ((!lIsInterCompanyCustomerMessage && lIndex == 0)
-                        || (lIsInterCompanyCustomerMessage && pInterCompanyId.equalsIgnoreCase(lCompanyNumber))) {
+                mLogger.debug("lIsInterCompanyMessage: {}, pInterCompanyId : {}, Index : {}", lIsInterCompanyMessage, pInterCompanyId, lIndex);
+                if ((!lIsInterCompanyMessage && lIndex == 0)
+                        || (lIsInterCompanyMessage && pInterCompanyId.equalsIgnoreCase(lCompanyNumber))) {
                     lDefaultLC = lLocation.get();
                 }
 

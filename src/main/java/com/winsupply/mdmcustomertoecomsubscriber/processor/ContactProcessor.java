@@ -107,6 +107,8 @@ public class ContactProcessor {
             Contact lContactEntity;
             if (lContactOpt.isPresent()) {
                 lContactEntity = lContactOpt.get();
+                mLogger.debug("Contact with contactECMId: {} is found in DB", lContactEntity.getContactECMId());
+
                 if ("N".equalsIgnoreCase(pContactVO.getContactECommerceStatus())) {
                     lContactEntity.setEcmActive((short) 0);
                     mContactRepository.save(lContactEntity);

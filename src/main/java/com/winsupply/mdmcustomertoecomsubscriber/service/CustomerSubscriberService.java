@@ -111,20 +111,15 @@ public class CustomerSubscriberService {
             lCustomer = new Customer();
             lCustomer.setCustomerECMId(lCustomerECMId);
         } else {
+            mLogger.debug("Customer with customerECMId: {} is found in DB", lCustomerECMId);
             lCustomer = lCustomerDBRecord.get();
         }
         lCustomer.setCustomerName(pCustomerMessageVO.getFullName());
         lCustomer.setFederalTaxId(getFederalTaxId(pCustomerMessageVO.getFederalIds()));
         lCustomer.setWincca(pCustomerMessageVO.getWinCCA());
-
         lCustomer = mCustomerRepository.save(lCustomer);
 
-        mCustomerResupplyRepository.deleteAllByCustomerECMId(lCustomerECMId);
-        if (pCustomerMessageVO.getResupplyLocations() != null && !pCustomerMessageVO.getResupplyLocations().isEmpty()) {
-            final List<CustomerResupply> lResupplyLocations = pCustomerMessageVO.getResupplyLocations().stream()
-                    .map(lVmiLocation -> createResupplyLocation(lCustomerECMId, lVmiLocation)).toList();
-            mCustomerResupplyRepository.saveAll(lResupplyLocations);
-        }
+        setResupplyLocation(pCustomerMessageVO);
 
         final Map<String, Account> lFilteredAccounts = validateAndFilterAccounts(pCustomerMessageVO.getWiseAccounts());
         final String lInterCompanyId = pCustomerMessageVO.getInterCompanyId();
@@ -138,6 +133,21 @@ public class CustomerSubscriberService {
         mAddressProcessor.importAddressesData(lCustomer, pCustomerMessageVO.getAddresses());
 
         return lCustomer;
+    }
+
+    /**
+     * <b>setResupplyLocation</b> - It sets the resupply location data
+     *
+     * @param pCustomerMessageVO - the pCustomerMessageVO
+     */
+    private void setResupplyLocation(final CustomerMessageVO pCustomerMessageVO) {
+        mCustomerResupplyRepository.deleteAllByCustomerECMId(pCustomerMessageVO.getCustomerEcmId());
+
+        if (pCustomerMessageVO.getResupplyLocations() != null && !pCustomerMessageVO.getResupplyLocations().isEmpty()) {
+            final List<CustomerResupply> lResupplyLocations = pCustomerMessageVO.getResupplyLocations().stream()
+                    .map(lVmiLocation -> createResupplyLocation(pCustomerMessageVO.getCustomerEcmId(), lVmiLocation)).toList();
+            mCustomerResupplyRepository.saveAll(lResupplyLocations);
+        }
     }
 
     /**
@@ -203,6 +213,7 @@ public class CustomerSubscriberService {
                 processWiseAccount(lFilteredAccountsMap, lWiseAccount);
             }
         }
+        mLogger.debug("lFilteredAccountsMap : {}", lFilteredAccountsMap);
         return lFilteredAccountsMap;
 
     }
