@@ -9,8 +9,10 @@ import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactRole;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.EmailPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Industry;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.ListGroup;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.PhoneNumberType;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Quote;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ContactEmailPreferenceId;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ContactIndustryPreferenceId;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO;
@@ -22,9 +24,12 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactRoleRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.EmailPreferenceRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.IndustryRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListGroupRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderEmailAddressRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneTypeRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -71,20 +76,31 @@ public class ContactProcessor {
 
     private final EmailPreferenceRepository mEmailPreferenceRepository;
 
+    private final QuoteRepository mQuoteRepository;
+
+    private final ListGroupRepository mListGroupRepository;
+
     /**
-     * <b>createOrUpdateContacts</b> - It creates or updates the customer contacts
+     * <b>createOrUpdateContacts</b> - It creates or updates the customer's contacts
      *
      * @param pCustomer          - the Customer
      * @param pCustomerMessageVO - the CustomerMessage
      */
     public void createOrUpdateContacts(Customer pCustomer, CustomerMessageVO pCustomerMessageVO) {
-        List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
-        for (CustomerMessageVO.Contact lContactVO : lContacts) {
-            final String lUserId = lContactVO.getUserId();
-            if (StringUtils.hasText(lUserId) && Utility.isValidEmail(lUserId)) {
-                processContactData(pCustomer, pCustomerMessageVO, lContactVO);
-            } else {
-                mLogger.debug("Skipping Contact with ContactECMId : {}, due to invalid userId : {}", lContactVO.getContactEcmId(), lUserId);
+        if (CollectionUtils.isEmpty(pCustomerMessageVO.getContacts())) {
+            mLogger.debug("Contacts is empty, deleting the existing contacts in database.");
+            deleteCustomerAllContacts(pCustomerMessageVO.getCustomerEcmId());
+        } else {
+            deleteContactsRemovedFromCustomer(pCustomerMessageVO);
+
+            List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
+            for (CustomerMessageVO.Contact lContactVO : lContacts) {
+                String lUserId = lContactVO.getUserId();
+                if (StringUtils.hasText(lUserId) && Utility.isValidEmail(lUserId)) {
+                    processContactData(pCustomer, pCustomerMessageVO, lContactVO);
+                } else {
+                    mLogger.debug("Skipping Contact with ContactECMId : {}, due to invalid userId : {}", lContactVO.getContactEcmId(), lUserId);
+                }
             }
         }
     }
@@ -102,7 +118,6 @@ public class ContactProcessor {
         if (!StringUtils.hasText(lFirstName) || !StringUtils.hasText(lLastName)) {
             mLogger.error("First Name or Last Name is missing for contact with id : {}", pContactVO.getContactEcmId());
         } else {
-            // TODO - need to delete contact based on contactAtgAccounts
             Optional<Contact> lContactOpt = mContactRepository.findByLogin(pContactVO.getUserId());
             Contact lContactEntity;
             if (lContactOpt.isPresent()) {
@@ -149,6 +164,9 @@ public class ContactProcessor {
         if (null != pContactEntity.getAddress()) {
             mPhoneRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
             mOrderEmailAddressRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
+            Long lAddressId = pContactEntity.getAddress().getId();
+            pContactEntity.setAddress(null);
+            mAddressRepository.deleteById(lAddressId);
         }
 
         Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(pContact);
@@ -170,6 +188,63 @@ public class ContactProcessor {
             mOrderEmailAddressRepository.saveAll(lOrderEmailAddressSet);
         }
 
+    }
+
+    /**
+     * <b>deleteCustomerAllContacts</b> - It deletes the customer's contact and it's related data
+     *
+     * @param pCustomerECMId - the Customer ECM Id
+     */
+    private void deleteCustomerAllContacts(final String pCustomerECMId) {
+        final List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMId(pCustomerECMId);
+        if (!CollectionUtils.isEmpty(lContacts)) {
+            for (Contact lContact : lContacts) {
+                deleteContact(lContact);
+            }
+        }
+    }
+
+    /**
+     * <b>deleteContactsRemovedFromCustomer</b> - It deletes the Contacts those are
+     * present in database however removed in Customer message
+     *
+     * @param pCustomerMessageVO - the Customer Messsage
+     */
+    private void deleteContactsRemovedFromCustomer(final CustomerMessageVO pCustomerMessageVO) {
+        final List<String> lContactECMIds = pCustomerMessageVO.getContacts().stream().map(CustomerMessageVO.Contact::getContactEcmId).toList();
+
+        final List<Contact> lContactsDB = mContactRepository.findByCustomerCustomerECMId(pCustomerMessageVO.getCustomerEcmId());
+        if (!CollectionUtils.isEmpty(lContactsDB)) {
+            final Set<Contact> lContactsToDelete = lContactsDB.stream().filter(lContact -> !lContactECMIds.contains(lContact.getContactECMId()))
+                    .collect(Collectors.toSet());
+            mLogger.debug("CustomerECMId : {}, List of Contacts for deletion : {}", pCustomerMessageVO.getCustomerEcmId(), lContactsToDelete);
+            for (Contact lContact : lContactsToDelete) {
+                deleteContact(lContact);
+            }
+        }
+    }
+
+    /**
+     * <b>deleteContact</b> - It delete the contact and it's related data
+     *
+     * @param pContact - the Contact
+     */
+    private void deleteContact(final Contact pContact) {
+        mContactEmailPreferenceRepository.deleteAllByIdContactEcmId(pContact.getContactECMId());
+        mContactIndustryPreferenceRepository.deleteAllByIdContactEcmId(pContact.getContactECMId());
+        Long lAddressId = null;
+        if (null != pContact.getAddress()) {
+            mPhoneRepository.deleteAllByAddressId(pContact.getAddress().getId());
+            mOrderEmailAddressRepository.deleteAllByAddressId(pContact.getAddress().getId());
+            lAddressId = pContact.getAddress().getId();
+        }
+
+        dissociateQuotesFromContact(pContact);
+        dissociateListGroupsFromContact(pContact);
+        mContactRepository.deleteById(pContact.getContactECMId());
+        if (null != lAddressId) {
+            mAddressRepository.deleteById(lAddressId);
+        }
     }
 
     /**
@@ -206,6 +281,7 @@ public class ContactProcessor {
      */
     private void populateRole(Contact pContactEntity, CustomerMessageVO.Contact pContactVO) {
         Integer lRoleId;
+        mLogger.debug("ContactECMId : {}, Role: {}", pContactVO.getContactEcmId(), pContactVO.getRole());
         if (StringUtils.hasText(pContactVO.getRole())) {
             lRoleId = Utility.getContactRole(pContactVO.getRole());
         } else {
@@ -266,9 +342,11 @@ public class ContactProcessor {
     private Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> createPhones(Contact pContactEntity, CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getContactPhones() && !pContactVO.getContactPhones().isEmpty()) {
             return pContactVO.getContactPhones().stream().map(lPhone -> {
-                com.winsupply.mdmcustomertoecomsubscriber.entities.Phone lPhoneEntity = new com.winsupply.mdmcustomertoecomsubscriber.entities.Phone();
+                com.winsupply.mdmcustomertoecomsubscriber.entities.Phone lPhoneEntity =
+                        new com.winsupply.mdmcustomertoecomsubscriber.entities.Phone();
                 if (null == pContactEntity.getAddress()) {
-                    com.winsupply.mdmcustomertoecomsubscriber.entities.Address lAddress = new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
+                    com.winsupply.mdmcustomertoecomsubscriber.entities.Address lAddress =
+                            new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
                     lAddress = mAddressRepository.save(lAddress);
                     pContactEntity.setAddress(lAddress);
                     lPhoneEntity.setAddress(lAddress);
@@ -309,6 +387,39 @@ public class ContactProcessor {
             }).collect(Collectors.toSet());
         } else {
             return Collections.emptySet();
+        }
+    }
+
+    /**
+     * <b>dissociateQuotesFromContact</b> - it dissociates quotes from contact
+     *
+     * @param pContact         - the Contact
+     */
+    private void dissociateQuotesFromContact(final Contact pContact) {
+        final List<Quote> lQuotes = mQuoteRepository.findByContactContactECMId(pContact.getContactECMId());
+        if (lQuotes != null && !lQuotes.isEmpty()) {
+            for (final Quote lQuoteItem : lQuotes) {
+                lQuoteItem.setContact(null);
+                mLogger.debug("Quote : {} unlinked from contact with contactECMId : {} ", lQuoteItem.getQuoteId(), pContact.getContactECMId());
+            }
+            mQuoteRepository.saveAll(lQuotes);
+        }
+    }
+
+    /**
+     * <b>dissociateListGroupsFromContact</b> - it dissociates ListGroups from
+     * contact
+     *
+     * @param pContact - the Contact
+     */
+    private void dissociateListGroupsFromContact(final Contact pContact) {
+        List<ListGroup> lListGroups = mListGroupRepository.findByContactContactECMId(pContact.getContactECMId());
+        if (null != lListGroups && !lListGroups.isEmpty()) {
+            for (final ListGroup lListGroupItem : lListGroups) {
+                lListGroupItem.setContact(null);
+                mLogger.debug("List Group : {} unlined from contact with contactECMId : {}", lListGroupItem.getGroupId(), pContact.getContactECMId());
+            }
+            mListGroupRepository.saveAll(lListGroups);
         }
     }
 }
