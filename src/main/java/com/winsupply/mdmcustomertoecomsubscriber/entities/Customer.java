@@ -1,5 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.entities;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -28,11 +29,11 @@ public class Customer {
     @Column(name = "customer_name", length = 120, nullable = false)
     private String customerName;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "default_billing_address_id", referencedColumnName = "address_id")
     private Address defaultBillingAddress;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "default_shipping_address_id", referencedColumnName = "address_id")
     private Address defaultShippingAddress;
 

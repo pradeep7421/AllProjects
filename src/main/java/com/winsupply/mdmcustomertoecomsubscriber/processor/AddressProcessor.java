@@ -1,8 +1,9 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
 import com.winsupply.mdmcustomertoecomsubscriber.common.Constants;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
-import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Address;
+import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.AddressVO;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.AddressRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class AddressProcessor {
      * @param pCustomer  - the Customer
      * @param pAddresses - the Addresses
      */
-    public void importAddressesData(final Customer pCustomer, final List<Address> pAddresses) {
+    public void importAddressesData(final Customer pCustomer, final List<AddressVO> pAddresses) {
         if (pAddresses != null && !pAddresses.isEmpty()) {
             final boolean lIsShipAddrSet = setShippingAddress(pCustomer, pAddresses);
             setBillingAddress(pCustomer, pAddresses, lIsShipAddrSet);
@@ -37,17 +38,17 @@ public class AddressProcessor {
     /**
      * <b>setShippingAddr</b> - Set Shipping Address.
      *
-     * @param pCustomer
-     * @param pAddressList
-     * @return
+     * @param pCustomer    - the Customer
+     * @param pAddressList - the Address List
+     * @return boolean
      */
-    private boolean setShippingAddress(final Customer pCustomer, List<Address> pAddressList) {
+    private boolean setShippingAddress(final Customer pCustomer, final List<AddressVO> pAddressList) {
         boolean lIsShipAddrSet = false;
-        for (final Address lAddressVO : pAddressList) {
+        for (final AddressVO lAddressVO : pAddressList) {
             if (StringUtils.hasText(lAddressVO.getType()) && Constants.SHIP_TO.equalsIgnoreCase(lAddressVO.getType())) {
-                com.winsupply.mdmcustomertoecomsubscriber.entities.Address lShippingAddress = pCustomer.getDefaultShippingAddress();
+                Address lShippingAddress = pCustomer.getDefaultShippingAddress();
                 if (null == lShippingAddress) {
-                    lShippingAddress = new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
+                    lShippingAddress = new Address();
                 }
                 lShippingAddress = populateAddressObject(lShippingAddress, lAddressVO, pCustomer.getCustomerName());
                 pCustomer.setDefaultShippingAddress(lShippingAddress);
@@ -61,16 +62,16 @@ public class AddressProcessor {
     /**
      * <b>setBillingAddr</b> - Set Billing Address.
      *
-     * @param pCustomer - the Customer
-     * @param pAddressList - the Address List
+     * @param pCustomer         - the Customer
+     * @param pAddressList      - the Address List
      * @param pIsShipAddressSet - the Is Shipping Address Set
      */
-    private void setBillingAddress(final Customer pCustomer, List<Address> pAddressList, final boolean pIsShipAddressSet) {
-        for (final Address lAddress : pAddressList) {
+    private void setBillingAddress(final Customer pCustomer, final List<AddressVO> pAddressList, final boolean pIsShipAddressSet) {
+        for (final AddressVO lAddress : pAddressList) {
             if (StringUtils.hasText(lAddress.getType()) && Constants.BILL_TO.equalsIgnoreCase(lAddress.getType())) {
-                com.winsupply.mdmcustomertoecomsubscriber.entities.Address lBillingAddress = pCustomer.getDefaultBillingAddress();
+                Address lBillingAddress = pCustomer.getDefaultBillingAddress();
                 if (null == lBillingAddress) {
-                    lBillingAddress = new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
+                    lBillingAddress = new Address();
                 }
                 lBillingAddress = populateAddressObject(lBillingAddress, lAddress, pCustomer.getCustomerName());
                 pCustomer.setDefaultBillingAddress(lBillingAddress);
@@ -84,16 +85,14 @@ public class AddressProcessor {
     }
 
     /**
-     * This method is used to create the ATG Address from the Address vo from the
-     * json feed file.
+     * This method is used to create the Address from the AddressVO
      *
      * @param pAddressEntity - the Address
-     * @param pAddress - the address
-     * @param pCustomerName - the Customer Name
-     * @return lNewAddressObject
+     * @param pAddress       - the address
+     * @param pCustomerName  - the Customer Name
+     * @return Address
      */
-    private com.winsupply.mdmcustomertoecomsubscriber.entities.Address populateAddressObject(
-            com.winsupply.mdmcustomertoecomsubscriber.entities.Address pAddressEntity, Address pAddress, String pCustomerName) {
+    private Address populateAddressObject(final Address pAddressEntity, final AddressVO pAddress, final String pCustomerName) {
         pAddressEntity.setAddress1(pAddress.getAddressLine1());
         if (StringUtils.hasText(pAddress.getAddressLine2())) {
             pAddressEntity.setAddress2(pAddress.getAddressLine2());
