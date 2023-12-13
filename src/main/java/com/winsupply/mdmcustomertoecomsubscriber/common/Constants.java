@@ -24,5 +24,5 @@ public class Constants {
     public static final String LB = "LB";
     public static final String FX = "FX";
     public static final String PHONE_EXTRACT_REGEX = "[^0-9+]";
-    public static final String ACCOUNT_ECOM_STATUS_Y = "Y";
+    public static final String YES_KEY = "Y";
 }

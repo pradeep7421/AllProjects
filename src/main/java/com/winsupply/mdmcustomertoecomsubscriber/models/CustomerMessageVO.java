@@ -34,9 +34,9 @@ public class CustomerMessageVO {
 
     private List<Email> emails;
 
-    private List<Phone> phones;
+    private List<PhoneVO> phones;
 
-    private List<Address> addresses;
+    private List<AddressVO> addresses;
 
     private List<Contact> contacts;
 
@@ -64,7 +64,7 @@ public class CustomerMessageVO {
 
     @Data
     @JsonInclude(Include.NON_NULL)
-    public static class Phone {
+    public static class PhoneVO {
 
         private String phoneNumber;
 
@@ -75,7 +75,7 @@ public class CustomerMessageVO {
 
     @Data
     @JsonInclude(Include.NON_NULL)
-    public static class Address {
+    public static class AddressVO {
 
         private String addressLine1;
 
@@ -114,7 +114,7 @@ public class CustomerMessageVO {
 
         private List<ContactEmail> contactEmails;
 
-        private List<Phone> contactPhones;
+        private List<PhoneVO> contactPhones;
 
         @Data
         @JsonInclude(Include.NON_NULL)
@@ -153,7 +153,7 @@ public class CustomerMessageVO {
         private List<SubAccount> wiseSubAccounts;
 
         @JsonProperty("addresses")
-        private List<Address> addresses;
+        private List<AddressVO> addresses;
 
         @Data
         @JsonInclude(Include.NON_NULL)
@@ -192,7 +192,7 @@ public class CustomerMessageVO {
 
             private SubAccountDetail subAccountDetail;
 
-            private List<Address> subAccountAddresses;
+            private List<AddressVO> subAccountAddresses;
 
             @Data
             @JsonInclude(Include.NON_NULL)

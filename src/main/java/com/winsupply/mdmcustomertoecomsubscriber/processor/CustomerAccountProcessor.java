@@ -1,6 +1,5 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
-import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerAccount;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerAccountNumber;
@@ -12,7 +11,6 @@ import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerAccountNum
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerLocationId;
 import com.winsupply.mdmcustomertoecomsubscriber.exception.ECMException;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Account;
-import com.winsupply.mdmcustomertoecomsubscriber.repositories.AddressRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerAccountNumberRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerAccountRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerLocationRepository;
@@ -52,77 +50,91 @@ public class CustomerAccountProcessor {
 
     private final LocationRepository mLocationRepository;
 
-    private final AddressRepository mAddressRepository;
-
     private final CustomerSubAccountProcessor mCustomerSubAccountProcessor;
 
     /**
-     * <b>importCustomerAccountsData</b> - Import customer WISE accounts data
+     * <b>importWiseAccountsData</b> - Import WISE accounts data
      *
      * @param pCustomer           - the Customer record
      * @param pInterCompanyId     - the InterCompanyId
      * @param pFilteredAccountMap - the FilteredAccount Map
      * @throws ECMException - the ECMException
      */
-    public void importCustomerAccountsData(final Customer pCustomer, final String pInterCompanyId, final Map<String, Account> pFilteredAccountMap)
+    public void importWiseAccountsData(final Customer pCustomer, final String pInterCompanyId, final Map<String, Account> pFilteredAccountMap)
             throws ECMException {
-        final List<CustomerAccount> lCustomerAccounts = new ArrayList<>();
         final String lCustomerECMId = pCustomer.getCustomerECMId();
-        final boolean lIsInterCompanyMessage = StringUtils.hasText(pInterCompanyId) ? Boolean.TRUE : Boolean.FALSE;
-
         final List<String> lInActiveCustomerSubAccounts = getInactiveSubAccounts(lCustomerECMId);
 
         resetCustomerAccountsData(lCustomerECMId);
 
         if (null != pFilteredAccountMap && !pFilteredAccountMap.isEmpty()) {
-            final Location lWinDefaultCompany = pCustomer.getWinDefaultCompany();
-            final Set<String> lAccountNumbers = new HashSet<>();
-            final List<String> lCompanyNumbers = new ArrayList<>();
-            int lIndex = 0;
-            Location lDefaultLC = null;
-
-            for (final Map.Entry<String, Account> lFilteredAccount : pFilteredAccountMap.entrySet()) {
-                final Account lAccount = lFilteredAccount.getValue();
-                final String lCompanyNumber = lAccount.getCompanyNumber();
-
-                final Optional<Location> lLocation = mLocationRepository.findById(lCompanyNumber);
-                if (lLocation.isEmpty()) {
-                    mLogger.warn("customerECMId - {} :: LC {} not found", lCustomerECMId, lCompanyNumber);
-                    continue;
-                }
-                lAccountNumbers.add(lAccount.getAccountNumber());
-                lCompanyNumbers.add(lCompanyNumber);
-
-                // Setting the default LC
-                mLogger.debug("lIsInterCompanyMessage: {}, pInterCompanyId : {}, Index : {}", lIsInterCompanyMessage, pInterCompanyId, lIndex);
-                if ((!lIsInterCompanyMessage && lIndex == 0) || (lIsInterCompanyMessage && pInterCompanyId.equalsIgnoreCase(lCompanyNumber))) {
-                    lDefaultLC = lLocation.get();
-                }
-
-                final List<CustomerAccount> lCustomerAccountAttributes = createCustomerAccountAttributes(lCustomerECMId, lAccount);
-                if (!lCustomerAccountAttributes.isEmpty()) {
-                    lCustomerAccounts.addAll(lCustomerAccountAttributes);
-                }
-
-                mCustomerSubAccountProcessor.processSubAccountsData(lAccount, lInActiveCustomerSubAccounts, pCustomer);
-                lIndex++;
-            }
-            if (lWinDefaultCompany == null || !lCompanyNumbers.contains(lWinDefaultCompany.getCompanyNumber())) {
-                pCustomer.setWinDefaultCompany(lDefaultLC);
-            }
-            if (!lCustomerAccounts.isEmpty()) {
-                mCustomerAccountRepository.saveAll(lCustomerAccounts);
-            }
-
-            setCustomerAccountNumbers(lAccountNumbers, lCustomerECMId);
-            setCustomerLocations(lCompanyNumbers, lCustomerECMId);
-
-            // Checking for default LC
-            if (pCustomer.getWinDefaultCompany() == null) {
-                throw new ECMException("Default Local Company not set for the Customer - " + lCustomerECMId);
-            }
+            processFilteredAccounts(pCustomer, pInterCompanyId, pFilteredAccountMap, lInActiveCustomerSubAccounts);
         } else {
+            pCustomer.setWinDefaultCompany(null);
             mLogger.info("Reset Customer WISE account data since accounts are null or empty :: lCustomerEcmId {}", lCustomerECMId);
+        }
+    }
+
+    /**
+     * <b>processFilteredAccounts</b> - Process filtered accounts
+     *
+     * @param pCustomer           - the Customer record
+     * @param pInterCompanyId     - the InterCompanyId
+     * @param pFilteredAccountMap - the FilteredAccount Map
+     * @param pInActiveCustomerSubAccounts - the InActive customer subAccounts
+     * @throws ECMException - the ECMException
+     */
+    private void processFilteredAccounts(final Customer pCustomer, final String pInterCompanyId, final Map<String, Account> pFilteredAccountMap,
+            final List<String> pInActiveCustomerSubAccounts) throws ECMException {
+        final List<CustomerAccount> lCustomerAccounts = new ArrayList<>();
+        final Set<String> lAccountNumbers = new HashSet<>();
+        final List<String> lCompanyNumbers = new ArrayList<>();
+        Location lDefaultLC = null;
+
+        final String lCustomerECMId = pCustomer.getCustomerECMId();
+        final boolean lIsInterCompanyMessage = StringUtils.hasText(pInterCompanyId) ? Boolean.TRUE : Boolean.FALSE;
+        final Location lWinDefaultCompany = pCustomer.getWinDefaultCompany();
+
+        int lIndex = 0;
+        for (final Map.Entry<String, Account> lFilteredAccount : pFilteredAccountMap.entrySet()) {
+            final Account lAccount = lFilteredAccount.getValue();
+            final String lCompanyNumber = lAccount.getCompanyNumber();
+
+            final Optional<Location> lLocation = mLocationRepository.findById(lCompanyNumber);
+            if (lLocation.isEmpty()) {
+                mLogger.warn("customerECMId - {} :: LC {} not found", lCustomerECMId, lCompanyNumber);
+                continue;
+            }
+            lAccountNumbers.add(lAccount.getAccountNumber());
+            lCompanyNumbers.add(lCompanyNumber);
+
+            // Setting the default LC
+            mLogger.debug("lIsInterCompanyMessage: {}, pInterCompanyId : {}, Index : {}", lIsInterCompanyMessage, pInterCompanyId, lIndex);
+            if ((!lIsInterCompanyMessage && lIndex == 0) || (lIsInterCompanyMessage && pInterCompanyId.equalsIgnoreCase(lCompanyNumber))) {
+                lDefaultLC = lLocation.get();
+            }
+
+            final List<CustomerAccount> lCustomerAccountAttributes = createCustomerAccountAttributes(lCustomerECMId, lAccount);
+            if (!lCustomerAccountAttributes.isEmpty()) {
+                lCustomerAccounts.addAll(lCustomerAccountAttributes);
+            }
+
+            mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, pCustomer, lLocation.get());
+            lIndex++;
+        }
+        if (lWinDefaultCompany == null || !lCompanyNumbers.contains(lWinDefaultCompany.getCompanyNumber())) {
+            pCustomer.setWinDefaultCompany(lDefaultLC);
+        }
+        if (!lCustomerAccounts.isEmpty()) {
+            mCustomerAccountRepository.saveAll(lCustomerAccounts);
+        }
+
+        setCustomerAccountNumbers(lAccountNumbers, lCustomerECMId);
+        setCustomerLocations(lCompanyNumbers, lCustomerECMId);
+
+        // Checking for default LC
+        if (pCustomer.getWinDefaultCompany() == null) {
+            throw new ECMException("Default Local Company not set for the Customer - " + lCustomerECMId);
         }
     }
 
@@ -158,13 +170,13 @@ public class CustomerAccountProcessor {
      * <b>getInactiveSubAccounts</b> - It returns the Inactive subAccounts of
      * customer
      *
-     * @param lCustomerECMId - the Customer ECM Id
+     * @param pCustomerECMId - the Customer ECM Id
      * @return - List<String>
      */
-    private List<String> getInactiveSubAccounts(final String lCustomerECMId) {
+    private List<String> getInactiveSubAccounts(final String pCustomerECMId) {
         final Short lInActive = 0;
         final List<CustomerSubAccount> lInActiveCustomerSubAccounts = mCustomerSubAccountRepository
-                .findByCustomerCustomerECMIdAndStatusId(lCustomerECMId, lInActive);
+                .findByCustomerCustomerECMIdAndStatusId(pCustomerECMId, lInActive);
 
         List<String> lInActiveCustomerSubAccountList = null;
         if (null != lInActiveCustomerSubAccounts && !lInActiveCustomerSubAccounts.isEmpty()) {
@@ -174,7 +186,7 @@ public class CustomerAccountProcessor {
                     .toList();
         }
 
-        mLogger.debug("lInActiveCustomerSubAccountList : {}", lInActiveCustomerSubAccountList);
+        mLogger.debug("pCustomerECMId : {} - lInActiveCustomerSubAccountList : {}", pCustomerECMId, lInActiveCustomerSubAccountList);
         return lInActiveCustomerSubAccountList;
     }
 
@@ -185,39 +197,9 @@ public class CustomerAccountProcessor {
      */
     public void resetCustomerAccountsData(final String pCustomerECMId) {
         mCustomerAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);
-        deleteSubAccountAndAddress(pCustomerECMId);
+        mCustomerSubAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);
         mCustomerLocationRepository.deleteAllByCustomerECMId(pCustomerECMId);
         mCustomerAccountNumberRepository.deleteAllByCustomerECMId(pCustomerECMId);
-    }
-
-    /**
-     * <b>deleteSubAccountAndAddress</b> - It deletes the customer Sub Accounts and
-     * addresses
-     *
-     * @param pCustomerECMId - the Customer ECM Id
-     */
-    private void deleteSubAccountAndAddress(final String pCustomerECMId) {
-        mCustomerSubAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);
-    }
-
-    /**
-     * <b>deleteCustomerAddress</b> - It deletes the customer shipping or billing
-     * address
-     *
-     * @param pCustomer - the Customer
-     */
-    public void deleteCustomerAddress(final Customer pCustomer) {
-        Address lDefaultBillingAddress = pCustomer.getDefaultBillingAddress();
-        if (null != lDefaultBillingAddress) {
-            pCustomer.setDefaultBillingAddress(null);
-            mAddressRepository.deleteById(lDefaultBillingAddress.getId());
-        }
-
-        Address lDefaultShippingAddress = pCustomer.getDefaultShippingAddress();
-        if (null != lDefaultShippingAddress) {
-            pCustomer.setDefaultShippingAddress(null);
-            mAddressRepository.deleteById(lDefaultShippingAddress.getId());
-        }
     }
 
     /**

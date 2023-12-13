@@ -2,6 +2,7 @@ package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
 import com.winsupply.mdmcustomertoecomsubscriber.common.Constants;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactEmailPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactIndustryPreference;
@@ -11,6 +12,7 @@ import com.winsupply.mdmcustomertoecomsubscriber.entities.EmailPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Industry;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ListGroup;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Phone;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.PhoneNumberType;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Quote;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ContactEmailPreferenceId;
@@ -86,16 +88,15 @@ public class ContactProcessor {
      * @param pCustomer          - the Customer
      * @param pCustomerMessageVO - the CustomerMessage
      */
-    public void createOrUpdateContacts(Customer pCustomer, CustomerMessageVO pCustomerMessageVO) {
+    public void createOrUpdateContacts(final Customer pCustomer, final CustomerMessageVO pCustomerMessageVO) {
         if (CollectionUtils.isEmpty(pCustomerMessageVO.getContacts())) {
             mLogger.debug("Contacts is empty, deleting the existing contacts in database.");
             deleteCustomerAllContacts(pCustomerMessageVO.getCustomerEcmId());
         } else {
             deleteContactsRemovedFromCustomer(pCustomerMessageVO);
-
             List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
             for (CustomerMessageVO.Contact lContactVO : lContacts) {
-                String lUserId = lContactVO.getUserId();
+                final String lUserId = lContactVO.getUserId();
                 if (StringUtils.hasText(lUserId) && Utility.isValidEmail(lUserId)) {
                     processContactData(pCustomer, pCustomerMessageVO, lContactVO);
                 } else {
@@ -112,7 +113,8 @@ public class ContactProcessor {
      * @param pCustomerMessageVO - the Customer Message
      * @param pContactVO - Contact
      */
-    private void processContactData(Customer pCustomer, CustomerMessageVO pCustomerMessageVO, CustomerMessageVO.Contact pContactVO) {
+    private void processContactData(final Customer pCustomer, final CustomerMessageVO pCustomerMessageVO,
+            final CustomerMessageVO.Contact pContactVO) {
         final String lFirstName = pContactVO.getFirstName();
         final String lLastName = pContactVO.getLastName();
         if (!StringUtils.hasText(lFirstName) || !StringUtils.hasText(lLastName)) {
@@ -154,7 +156,7 @@ public class ContactProcessor {
      * @param pContact       - the ContactVO
      *
      */
-    private void importContactData(Contact pContactEntity, CustomerMessageVO.Contact pContact) {
+    private void importContactData(final Contact pContactEntity, final CustomerMessageVO.Contact pContact) {
         pContactEntity.setFirstName(pContact.getFirstName());
         pContactEntity.setLastName(pContact.getLastName());
         pContactEntity.setEcmActive((short) 1);
@@ -171,7 +173,7 @@ public class ContactProcessor {
 
         Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(pContact);
         Set<ContactIndustryPreference> lContactIndustryPreferenceSet = createContactIndustryPreferences(pContact);
-        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> lPhoneNumbersSet = createPhones(pContactEntity, pContact);
+        Set<Phone> lPhoneNumbersSet = createPhones(pContactEntity, pContact);
         Set<com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress> lOrderEmailAddressSet = createOrderEmailAddress(pContactEntity,
                 pContact);
 
@@ -253,7 +255,7 @@ public class ContactProcessor {
      * @param pContactVO - the Contact VO
      * @return - Set<ContactEmailPreference>
      */
-    private Set<ContactEmailPreference> createContactEmailPreferences(CustomerMessageVO.Contact pContactVO) {
+    private Set<ContactEmailPreference> createContactEmailPreferences(final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getCommunicationPreference() && !pContactVO.getCommunicationPreference().isEmpty()) {
             return pContactVO.getCommunicationPreference().stream().map(lPreferences -> {
                 Optional<EmailPreference> lPreferenceOpt = mEmailPreferenceRepository.findByEmailPreferenceDesc(lPreferences);
@@ -279,7 +281,7 @@ public class ContactProcessor {
      * @param pContactEntity - the Contact Entity
      * @param pContactVO     - the Contact VO
      */
-    private void populateRole(Contact pContactEntity, CustomerMessageVO.Contact pContactVO) {
+    private void populateRole(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
         Integer lRoleId;
         mLogger.debug("ContactECMId : {}, Role: {}", pContactVO.getContactEcmId(), pContactVO.getRole());
         if (StringUtils.hasText(pContactVO.getRole())) {
@@ -299,16 +301,16 @@ public class ContactProcessor {
      * @param pContactVO     - Contact VO
      * @return- Set<OrderEmailAddress>
      */
-    private Set<OrderEmailAddress> createOrderEmailAddress(Contact pContactEntity, CustomerMessageVO.Contact pContactVO) {
+    private Set<OrderEmailAddress> createOrderEmailAddress(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
         Set<OrderEmailAddress> lOrderEmailAddresses = null;
         if (null != pContactVO.getContactEmails() && !pContactVO.getContactEmails().isEmpty()) {
             lOrderEmailAddresses = new HashSet<>();
             for (final ContactEmail lContactEmail : pContactVO.getContactEmails()) {
                 switch (lContactEmail.getEmailType()) {
                     case Constants.ON_EMAIL_TYPE:
-                        com.winsupply.mdmcustomertoecomsubscriber.entities.Address lAddress;
+                        Address lAddress;
                         if (null == pContactEntity.getAddress()) {
-                            lAddress = new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
+                            lAddress = new Address();
                             lAddress = mAddressRepository.save(lAddress);
                             pContactEntity.setAddress(lAddress);
                         } else {
@@ -337,16 +339,14 @@ public class ContactProcessor {
      *
      * @param pContactEntity - the Contact Entity
      * @param pContactVO     - the Contact VO
-     * @return - Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone>
+     * @return - Set<Phone>
      */
-    private Set<com.winsupply.mdmcustomertoecomsubscriber.entities.Phone> createPhones(Contact pContactEntity, CustomerMessageVO.Contact pContactVO) {
+    private Set<Phone> createPhones(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getContactPhones() && !pContactVO.getContactPhones().isEmpty()) {
             return pContactVO.getContactPhones().stream().map(lPhone -> {
-                com.winsupply.mdmcustomertoecomsubscriber.entities.Phone lPhoneEntity =
-                        new com.winsupply.mdmcustomertoecomsubscriber.entities.Phone();
+                Phone lPhoneEntity = new Phone();
                 if (null == pContactEntity.getAddress()) {
-                    com.winsupply.mdmcustomertoecomsubscriber.entities.Address lAddress =
-                            new com.winsupply.mdmcustomertoecomsubscriber.entities.Address();
+                    Address lAddress = new Address();
                     lAddress = mAddressRepository.save(lAddress);
                     pContactEntity.setAddress(lAddress);
                     lPhoneEntity.setAddress(lAddress);
@@ -371,7 +371,7 @@ public class ContactProcessor {
      * @param pContactVO - the Contact VO
      * @return - Set<ContactIndustryPreference>
      */
-    private Set<ContactIndustryPreference> createContactIndustryPreferences(CustomerMessageVO.Contact pContactVO) {
+    private Set<ContactIndustryPreference> createContactIndustryPreferences(final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getIndustries() && !pContactVO.getIndustries().isEmpty()) {
             return Arrays.stream(pContactVO.getIndustries().split(",")).map(lEmailPreference -> {
                 Optional<Industry> lIndustryOpt = mIndustryRepository.findByIndustryDesc(lEmailPreference);

@@ -11,7 +11,7 @@ import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Accoun
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.AtgAccount;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Email;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.FederalId;
-import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Phone;
+import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.PhoneVO;
 import com.winsupply.mdmcustomertoecomsubscriber.processor.AddressProcessor;
 import com.winsupply.mdmcustomertoecomsubscriber.processor.ContactProcessor;
 import com.winsupply.mdmcustomertoecomsubscriber.processor.CustomerAccountProcessor;
@@ -58,7 +58,7 @@ public class CustomerSubscriberService {
     private final ContactProcessor mContactProcessor;
 
     /**
-     * Process the Quotes Message
+     * Process the Customer Message
      *
      * @param pPayload        - the Payload
      * @param pMessageHeaders - the Message Headers
@@ -124,7 +124,7 @@ public class CustomerSubscriberService {
         final Map<String, Account> lFilteredAccounts = validateAndFilterAccounts(pCustomerMessageVO.getWiseAccounts());
         final String lInterCompanyId = pCustomerMessageVO.getInterCompanyId();
 
-        mCustomerAccountProcessor.importCustomerAccountsData(lCustomer, lInterCompanyId, lFilteredAccounts);
+        mCustomerAccountProcessor.importWiseAccountsData(lCustomer, lInterCompanyId, lFilteredAccounts);
 
         importPhonesData(lCustomer, pCustomerMessageVO.getPhones());
 
@@ -145,7 +145,7 @@ public class CustomerSubscriberService {
 
         if (pCustomerMessageVO.getResupplyLocations() != null && !pCustomerMessageVO.getResupplyLocations().isEmpty()) {
             final List<CustomerResupply> lResupplyLocations = pCustomerMessageVO.getResupplyLocations().stream()
-                    .map(lVmiLocation -> createResupplyLocation(pCustomerMessageVO.getCustomerEcmId(), lVmiLocation)).toList();
+                    .map(lResupplyLocation -> createResupplyLocation(pCustomerMessageVO.getCustomerEcmId(), lResupplyLocation)).toList();
             mCustomerResupplyRepository.saveAll(lResupplyLocations);
         }
     }
@@ -166,7 +166,7 @@ public class CustomerSubscriberService {
                 }
             }
         } else {
-            mLogger.debug("pEmails is empty, Resetting the email property");
+            mLogger.debug("pEmails are empty, Resetting the email property");
             pCustomer.setEmail(null);
         }
     }
@@ -177,25 +177,23 @@ public class CustomerSubscriberService {
      * @param pCustomer - the Customer
      * @param pPhones   - the Phones
      */
-    private void importPhonesData(final Customer pCustomer, final List<Phone> pPhones) {
+    private void importPhonesData(final Customer pCustomer, final List<PhoneVO> pPhones) {
+        String lPhoneNumber = null;
+        String lFaxNumber = null;
         if (pPhones != null && !pPhones.isEmpty()) {
-            for (final Phone lPhone : pPhones) {
-                String lPhoneNumber = lPhone.getPhoneNumber();
+            for (final PhoneVO lPhone : pPhones) {
                 final String lType = lPhone.getPhoneType();
-                if (StringUtils.hasText(lPhoneNumber) && StringUtils.hasText(lType)) {
-                    lPhoneNumber = lPhoneNumber.replaceAll(Constants.PHONE_EXTRACT_REGEX, "");
+                if (StringUtils.hasText(lPhone.getPhoneNumber()) && StringUtils.hasText(lType)) {
                     if (Constants.LB.equalsIgnoreCase(lType)) {
-                        pCustomer.setPhone(lPhoneNumber);
+                        lPhoneNumber = lPhone.getPhoneNumber().replaceAll(Constants.PHONE_EXTRACT_REGEX, "");
                     } else if (Constants.FX.equalsIgnoreCase(lType)) {
-                        // TODO - pCustomer.setFax(lPhoneNumber);
+                        lFaxNumber = lPhone.getPhoneNumber().replaceAll(Constants.PHONE_EXTRACT_REGEX, "");
                     }
                 }
             }
-        } else {
-            mLogger.debug("pPhones is empty, resetting the phone and fax number property");
-            pCustomer.setPhone(null);
-            // TODO - pCustomer.setFax(null);
         }
+        pCustomer.setPhone(lPhoneNumber);
+     // TODO - BLOCKED pCustomer.setFax(lFaxNumber);
     }
 
     /**
@@ -234,9 +232,9 @@ public class CustomerSubscriberService {
                 final Account lPrevWiseCustomer = pFilteredAccountsMap.get(lLocalCompNumber);
                 final String lPrevAccountEcomStatus = lPrevWiseCustomer.getAccountEcommerceStatus();
 
-                if (Constants.ACCOUNT_ECOM_STATUS_Y.equals(lAccountEcomStatus) && Constants.ACCOUNT_ECOM_STATUS_Y.equals(lPrevAccountEcomStatus)) {
+                if (Constants.YES_KEY.equals(lAccountEcomStatus) && Constants.YES_KEY.equals(lPrevAccountEcomStatus)) {
                     throw new ECMException(mResourceBundle.getString("duplicate.accountEcomStatus"));
-                } else if (Constants.ACCOUNT_ECOM_STATUS_Y.equals(lAccountEcomStatus)) {
+                } else if (Constants.YES_KEY.equals(lAccountEcomStatus)) {
                     pFilteredAccountsMap.put(lLocalCompNumber, pWiseAccount);
                 }
             } else {
