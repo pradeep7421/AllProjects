@@ -22,5 +22,5 @@ public interface IndustryRepository extends JpaRepository<Industry, Short> {
      * @param pIndustryDesc - the Industry description
      * @return - Optional<Industry>
      */
-    Optional<Industry> findByIndustryDesc(@Param("industryDesc") String pIndustryDesc);
+    Optional<Industry> findByIndustryDescIgnoreCase(@Param("industryDesc") String pIndustryDesc);
 }

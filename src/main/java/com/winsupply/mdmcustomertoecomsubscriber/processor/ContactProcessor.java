@@ -27,8 +27,8 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.IndustryRepository
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderEmailAddressRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneTypeRepository;
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +38,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -80,8 +79,9 @@ public class ContactProcessor {
      * @param pCustomerMessageVO - the CustomerMessage
      */
     public void createOrUpdateContacts(final Customer pCustomer, final CustomerMessageVO pCustomerMessageVO) {
-        List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
-        for (CustomerMessageVO.Contact lContactVO : lContacts) {
+        final List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
+        // TODO - where is the empty check and deletes
+        for (final CustomerMessageVO.Contact lContactVO : lContacts) {
             final String lUserId = lContactVO.getUserId();
             if (StringUtils.hasText(lUserId) && Utility.isValidEmail(lUserId)) {
                 processContactData(pCustomer, pCustomerMessageVO, lContactVO);
@@ -103,10 +103,11 @@ public class ContactProcessor {
         final String lFirstName = pContactVO.getFirstName();
         final String lLastName = pContactVO.getLastName();
         if (!StringUtils.hasText(lFirstName) || !StringUtils.hasText(lLastName)) {
-            mLogger.error("First Name or Last Name is missing for contact with id : {}", pContactVO.getContactEcmId());
+            mLogger.error("CustomerECMId : {} - First Name or Last Name is missing for contact with id : {}", pCustomer.getCustomerECMId(),
+                    pContactVO.getContactEcmId());
         } else {
             // TODO - need to delete contact based on contactAtgAccounts
-            Optional<Contact> lContactOpt = mContactRepository.findByLogin(pContactVO.getUserId());
+            final Optional<Contact> lContactOpt = mContactRepository.findByLoginIgnoreCase(pContactVO.getUserId());
             Contact lContactEntity;
             if (lContactOpt.isPresent()) {
                 lContactEntity = lContactOpt.get();
@@ -121,10 +122,10 @@ public class ContactProcessor {
                 lContactEntity = new Contact();
                 lContactEntity.setLogin(pContactVO.getUserId());
                 lContactEntity.setContactECMId(pContactVO.getContactEcmId());
+                lContactEntity.setRegistrationDate(LocalDateTime.now());
             }
-
             if (StringUtils.hasText(pCustomerMessageVO.getInterCompanyId())) {
-                mLogger.debug("Setting role as lcAdmin for LC Customer Feed");
+                mLogger.debug("CustomerECMId : {} - Setting role as lcAdmin for LC Customer", pCustomer.getCustomerECMId());
                 pContactVO.setRole(Constants.LC_ADMIN_ROLE);
             }
 
@@ -154,25 +155,10 @@ public class ContactProcessor {
             mOrderEmailAddressRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
         }
 
-        Set<ContactEmailPreference> lContactEmailPreferenceSet = createContactEmailPreferences(pContact);
-        Set<ContactIndustryPreference> lContactIndustryPreferenceSet = createContactIndustryPreferences(pContact);
-        Set<Phone> lPhoneNumbersSet = createPhones(pContactEntity, pContact);
-        Set<com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress> lOrderEmailAddressSet = createOrderEmailAddress(pContactEntity,
-                pContact);
-
-        if (!lContactEmailPreferenceSet.isEmpty()) {
-            mContactEmailPreferenceRepository.saveAll(lContactEmailPreferenceSet);
-        }
-        if (!lContactIndustryPreferenceSet.isEmpty()) {
-            mContactIndustryPreferenceRepository.saveAll(lContactIndustryPreferenceSet);
-        }
-        if (!lPhoneNumbersSet.isEmpty()) {
-            mPhoneRepository.saveAll(lPhoneNumbersSet);
-        }
-        if (!CollectionUtils.isEmpty(lOrderEmailAddressSet)) {
-            mOrderEmailAddressRepository.saveAll(lOrderEmailAddressSet);
-        }
-
+        createContactEmailPreferences(pContact);
+        createContactIndustryPreferences(pContact);
+        createPhones(pContactEntity, pContact);
+        createEmailAddresses(pContactEntity, pContact);
     }
 
     /**
@@ -181,23 +167,22 @@ public class ContactProcessor {
      * @param pContactVO - the Contact VO
      * @return - Set<ContactEmailPreference>
      */
-    private Set<ContactEmailPreference> createContactEmailPreferences(final CustomerMessageVO.Contact pContactVO) {
+    private void createContactEmailPreferences(final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getCommunicationPreference() && !pContactVO.getCommunicationPreference().isEmpty()) {
-            return pContactVO.getCommunicationPreference().stream().map(lPreferences -> {
-                Optional<EmailPreference> lPreferenceOpt = mEmailPreferenceRepository.findByEmailPreferenceDesc(lPreferences);
+            final Set<ContactEmailPreference> lContactEmailPreferenceSet = pContactVO.getCommunicationPreference().stream().map(lPreference -> {
+                final Optional<EmailPreference> lPreferenceOpt = mEmailPreferenceRepository.findByEmailPreferenceDescIgnoreCase(lPreference);
                 if (lPreferenceOpt.isPresent()) {
-                    EmailPreference lEmailPreference = lPreferenceOpt.get();
-                    ContactEmailPreference lContactEmailPreference = new ContactEmailPreference();
-                    ContactEmailPreferenceId lContactEmailPreferenceId = new ContactEmailPreferenceId();
+                    final ContactEmailPreference lContactEmailPreference = new ContactEmailPreference();
+                    final ContactEmailPreferenceId lContactEmailPreferenceId = new ContactEmailPreferenceId();
                     lContactEmailPreferenceId.setContactEcmId(pContactVO.getContactEcmId());
-                    lContactEmailPreferenceId.setEmailPreferenceId(lEmailPreference.getEmailPreferenceId());
+                    lContactEmailPreferenceId.setEmailPreferenceId(lPreferenceOpt.get().getEmailPreferenceId());
                     lContactEmailPreference.setId(lContactEmailPreferenceId);
                     return lContactEmailPreference;
                 }
                 return null;
             }).collect(Collectors.toSet());
-        } else {
-            return Collections.emptySet();
+
+            mContactEmailPreferenceRepository.saveAll(lContactEmailPreferenceSet);
         }
     }
 
@@ -208,42 +193,40 @@ public class ContactProcessor {
      * @param pContactVO     - the Contact VO
      */
     private void populateRole(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
-        Integer lRoleId;
+        Integer lRoleId = null;
         if (StringUtils.hasText(pContactVO.getRole())) {
-            lRoleId = Utility.getContactRole(pContactVO.getRole());
-        } else {
+            lRoleId = Utility.getContactRole(pContactVO.getRole().replaceAll("\\s", "").toLowerCase());
+        }
+        if (lRoleId == null) {
             lRoleId = Utility.getContactRole(Constants.PROCUREMENT_MANAGER_ROLE);
         }
-
-        Optional<ContactRole> lRoleOpt = mContactRoleRepository.findById(lRoleId);
+        final Optional<ContactRole> lRoleOpt = mContactRoleRepository.findById(lRoleId);
         lRoleOpt.ifPresent(pContactEntity::setRole);
     }
 
     /**
-     * <b>createOrderEmailAddress</b> - it creates the list of OrderEmailAddresses
+     * <b>createEmailAddresses</b> - it creates the list of Email Addresses
      *
      * @param pContactEntity - the Contact Entity
      * @param pContactVO     - Contact VO
-     * @return- Set<OrderEmailAddress>
      */
-    private Set<OrderEmailAddress> createOrderEmailAddress(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
-        Set<OrderEmailAddress> lOrderEmailAddresses = null;
+    private void createEmailAddresses(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getContactEmails() && !pContactVO.getContactEmails().isEmpty()) {
-            lOrderEmailAddresses = new HashSet<>();
+            final Set<OrderEmailAddress> lOrderEmailAddresses = new HashSet<>();
             for (final ContactEmail lContactEmail : pContactVO.getContactEmails()) {
                 switch (lContactEmail.getEmailType()) {
                     case Constants.ON_EMAIL_TYPE:
-                        Address lAddress;
+                        Address lAddressEntity;
                         if (null == pContactEntity.getAddress()) {
-                            lAddress = new Address();
-                            lAddress = mAddressRepository.save(lAddress);
-                            pContactEntity.setAddress(lAddress);
+                            lAddressEntity = new Address();
+                            lAddressEntity = mAddressRepository.save(lAddressEntity);
+                            pContactEntity.setAddress(lAddressEntity);
                         } else {
-                            lAddress = pContactEntity.getAddress();
+                            lAddressEntity = pContactEntity.getAddress();
                         }
 
-                        OrderEmailAddress lOrderEmailAddress = new OrderEmailAddress();
-                        lOrderEmailAddress.setAddressId(lAddress.getId());
+                        final OrderEmailAddress lOrderEmailAddress = new OrderEmailAddress();
+                        lOrderEmailAddress.setAddressId(lAddressEntity.getId());
                         lOrderEmailAddress.setOrderEmailAddress(lContactEmail.getEmailAddress());
                         lOrderEmailAddresses.add(lOrderEmailAddress);
                         break;
@@ -254,9 +237,8 @@ public class ContactProcessor {
                         break;
                 }
             }
+            mOrderEmailAddressRepository.saveAll(lOrderEmailAddresses);
         }
-
-        return lOrderEmailAddresses;
     }
 
     /**
@@ -264,12 +246,11 @@ public class ContactProcessor {
      *
      * @param pContactEntity - the Contact Entity
      * @param pContactVO     - the Contact VO
-     * @return - Set<Phone>
      */
-    private Set<Phone> createPhones(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
+    private void createPhones(final Contact pContactEntity, final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getContactPhones() && !pContactVO.getContactPhones().isEmpty()) {
-            return pContactVO.getContactPhones().stream().map(lPhone -> {
-                Phone lPhoneEntity = new Phone();
+            final Set<Phone> lPhoneNumbersSet = pContactVO.getContactPhones().stream().map(lPhone -> {
+                final Phone lPhoneEntity = new Phone();
                 if (null == pContactEntity.getAddress()) {
                     Address lAddress = new Address();
                     lAddress = mAddressRepository.save(lAddress);
@@ -279,13 +260,13 @@ public class ContactProcessor {
                     lPhoneEntity.setAddress(pContactEntity.getAddress());
                 }
                 lPhoneEntity.setPhoneNumber(lPhone.getPhoneNumber());
-                Optional<PhoneNumberType> lPhoneNumberTypeOpt = mPhoneTypeRepository
+                final Optional<PhoneNumberType> lPhoneNumberTypeOpt = mPhoneTypeRepository
                         .findByPhoneNumberTypeDesc(Utility.getPhoneNumberType(lPhone.getPhoneType()));
                 lPhoneNumberTypeOpt.ifPresent(lPhoneEntity::setPhoneNumberType);
                 return lPhoneEntity;
             }).collect(Collectors.toSet());
-        } else {
-            return Collections.emptySet();
+
+            mPhoneRepository.saveAll(lPhoneNumbersSet);
         }
     }
 
@@ -294,24 +275,23 @@ public class ContactProcessor {
      * preferences
      *
      * @param pContactVO - the Contact VO
-     * @return - Set<ContactIndustryPreference>
      */
-    private Set<ContactIndustryPreference> createContactIndustryPreferences(final CustomerMessageVO.Contact pContactVO) {
+    private void createContactIndustryPreferences(final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getIndustries() && !pContactVO.getIndustries().isEmpty()) {
-            return Arrays.stream(pContactVO.getIndustries().split(",")).map(lEmailPreference -> {
-                Optional<Industry> lIndustryOpt = mIndustryRepository.findByIndustryDesc(lEmailPreference);
-                if (lIndustryOpt.isPresent()) {
-                    ContactIndustryPreference lContactIndustryPreference = new ContactIndustryPreference();
-                    ContactIndustryPreferenceId lContactIndustryPreferenceId = new ContactIndustryPreferenceId();
-                    lContactIndustryPreferenceId.setContactEcmId(pContactVO.getContactEcmId());
-                    lContactIndustryPreferenceId.setIndustryId(lIndustryOpt.get().getIndustryId());
-                    lContactIndustryPreference.setId(lContactIndustryPreferenceId);
-                    return lContactIndustryPreference;
-                }
-                return null;
-            }).collect(Collectors.toSet());
-        } else {
-            return Collections.emptySet();
+            final Set<ContactIndustryPreference> lContactIndustryPreferenceSet = Arrays.stream(pContactVO.getIndustries().split(","))
+                    .map(lEmailPreference -> {
+                        final Optional<Industry> lIndustryOpt = mIndustryRepository.findByIndustryDescIgnoreCase(lEmailPreference);
+                        if (lIndustryOpt.isPresent()) {
+                            final ContactIndustryPreference lContactIndustryPreference = new ContactIndustryPreference();
+                            final ContactIndustryPreferenceId lContactIndustryPreferenceId = new ContactIndustryPreferenceId();
+                            lContactIndustryPreferenceId.setContactEcmId(pContactVO.getContactEcmId());
+                            lContactIndustryPreferenceId.setIndustryId(lIndustryOpt.get().getIndustryId());
+                            lContactIndustryPreference.setId(lContactIndustryPreferenceId);
+                            return lContactIndustryPreference;
+                        }
+                        return null;
+                    }).collect(Collectors.toSet());
+            mContactIndustryPreferenceRepository.saveAll(lContactIndustryPreferenceSet);
         }
     }
 }

@@ -19,10 +19,10 @@ public interface ContactRepository extends JpaRepository<Contact, String> {
     /**
      * <b>findByLogin</b> - it finds the Contact based on email id
      *
-     * @param pEmail - the Email
+     * @param pLogin - the login
      * @return - Optional<Contact>
      */
-    Optional<Contact> findByLogin(@Param("email") String pEmail);
+    Optional<Contact> findByLoginIgnoreCase(@Param("login") String pLogin);
 
     /**
      * <b>findByCustomerCustomerECMId</b> - It finds the list of contact based on

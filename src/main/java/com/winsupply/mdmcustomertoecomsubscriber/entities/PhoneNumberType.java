@@ -26,7 +26,4 @@ public class PhoneNumberType {
     @Column(name = "phone_number_type_desc", length = 20, nullable = false)
     private String phoneNumberTypeDesc;
 
-    @Column(name = "phone_number_type_sort", length = 10, nullable = false)
-    private String phoneNumberTypeSort;
-
 }

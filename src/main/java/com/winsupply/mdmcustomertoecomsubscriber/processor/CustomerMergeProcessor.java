@@ -49,41 +49,38 @@ public class CustomerMergeProcessor {
     /**
      * This method will merge the old customer data with new customer
      *
-     * @param pNewCustomer - the customer
-     * @param pAtgAccounts - the ATG accounts
+     * @param pNewCustomer - the New Customer
+     * @param pExistingCustomers - the Existing Customers
      */
-    public void mergeCustomer(final Customer pNewCustomer, List<AtgAccount> pAtgAccounts) {
-        List<String> lOldCustomerECMIds = pAtgAccounts.stream().map(AtgAccount::getAtgSystemSrcId).toList();
+    public void mergeCustomer(final Customer pNewCustomer, final List<AtgAccount> pExistingCustomers) {
+        final List<String> lExistingCustomerECMIds = pExistingCustomers.stream().map(AtgAccount::getAtgSystemSrcId).toList();
+        mLogger.debug("Processing Customer : {} -> lExistingCustomerECMIds : {}", pNewCustomer.getCustomerECMId(), lExistingCustomerECMIds);
+        for (final String lExistingCustomerECMId : lExistingCustomerECMIds) {
+            try {
+                // delete old customer data
+                final Optional<Customer> lExistingCustomerOpt = mCustomerRepository.findById(lExistingCustomerECMId);
+                lExistingCustomerOpt.ifPresent(lExistingCustomer -> {
+                    mCustomerResupplyRepository.deleteAllByCustomerECMId(lExistingCustomerECMId);
+                    mCustomerAccountProcessor.resetCustomerAccountsData(lExistingCustomerECMId);
 
-        if (!lOldCustomerECMIds.isEmpty()) {
-            mLogger.debug("lOldCustomerECMIds : {}", lOldCustomerECMIds);
-            for (final String lOldCustomerECMId : lOldCustomerECMIds) {
-                try {
-                    // delete old customer data
-                    Optional<Customer> lOldCustomerOpt = mCustomerRepository.findById(lOldCustomerECMId);
-                    lOldCustomerOpt.ifPresent(lOldCustomer -> {
-                        mCustomerResupplyRepository.deleteAllByCustomerECMId(lOldCustomerECMId);
-                        mCustomerAccountProcessor.resetCustomerAccountsData(lOldCustomerECMId);
+                    final List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMId(lExistingCustomerECMId);
+                    if (!CollectionUtils.isEmpty(lContacts)) {
+                        associateContactsWithNewCustomer(pNewCustomer, lContacts);
+                    }
 
-                        List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMId(lOldCustomerECMId);
-                        if (!CollectionUtils.isEmpty(lContacts)) {
-                            associateContactsWithNewCustomer(pNewCustomer, lContacts);
-                        }
+                    // Check and Move existing quotes
+                    checkAndMoveExistingQuotes(pNewCustomer, lExistingCustomerECMId);
+                    // Check and Move existing list groups
+                    checkAndMoveExistingListGroups(pNewCustomer, lExistingCustomerECMId);
+                    // Check and Move existing shared list
+                    checkAndMoveExistingSharedLists(pNewCustomer, lExistingCustomerECMId);
 
-                        // Check and Move existing quotes
-                        checkAndMoveExistingQuotes(pNewCustomer, lOldCustomerECMId);
-                        // Check and Move existing list group
-                        checkAndMoveExistingListGroups(pNewCustomer, lOldCustomerECMId);
-                        // Check and Move existing list
-                        checkAndMoveExistingSharedLists(pNewCustomer, lOldCustomerECMId);
+                    mCustomerRepository.deleteById(lExistingCustomerECMId);
+                });
 
-                        mCustomerRepository.deleteById(lOldCustomerECMId);
-                    });
-
-                } catch (final Exception lException) {
-                    mLogger.error("Exception while deleting lOldCustomerECMId -> {}", lOldCustomerECMId);
-                    throw lException;
-                }
+            } catch (final Exception lException) {
+                mLogger.error("Exception while deleting lExistingCustomerECMId -> {}", lExistingCustomerECMId);
+                throw lException;
             }
         }
     }
@@ -105,14 +102,15 @@ public class CustomerMergeProcessor {
      * <b>checkAndMoveExistingQuotes</b> - Check and move existing quotes
      *
      * @param pCustomer         - the New Customer
-     * @param pOldCustomerECMId - the Old Customer ECM Id
+     * @param pExistingCustomerECMId - the Existing Customer ECM Id
      */
-    private void checkAndMoveExistingQuotes(final Customer pCustomer, final String pOldCustomerECMId) {
-        final List<Quote> lQuotes = mQuoteRepository.findByCustomerCustomerECMId(pOldCustomerECMId);
+    private void checkAndMoveExistingQuotes(final Customer pCustomer, final String pExistingCustomerECMId) {
+        final List<Quote> lQuotes = mQuoteRepository.findByCustomerCustomerECMId(pExistingCustomerECMId);
         if (lQuotes != null && !lQuotes.isEmpty()) {
-            for (final Quote lQuoteItem : lQuotes) {
-                lQuoteItem.setCustomer(pCustomer);
-                mLogger.debug("Moved Quote : {} to Customer : {} ", lQuoteItem.getQuoteId(), pCustomer.getCustomerECMId());
+            for (final Quote lQuote : lQuotes) {
+                lQuote.setCustomer(pCustomer);
+                mLogger.debug("Moved Quote : {} from Customer : {} to {} ", lQuote.getQuoteId(), pExistingCustomerECMId,
+                        pCustomer.getCustomerECMId());
             }
             mQuoteRepository.saveAll(lQuotes);
         }
@@ -122,14 +120,15 @@ public class CustomerMergeProcessor {
      * <b>checkAndMoveExistingListGroups</b> - Check and move existing list groups
      *
      * @param pCustomer         - the New Customer
-     * @param pOldCustomerECMId - the Old Customer ECM Id
+     * @param pExistingCustomerECMId - the Existing Customer ECM Id
      */
-    private void checkAndMoveExistingListGroups(final Customer pCustomer, final String pOldCustomerECMId) {
-        List<ListGroup> lListGroups = mListGroupRepository.findByCustomerCustomerECMId(pOldCustomerECMId);
+    private void checkAndMoveExistingListGroups(final Customer pCustomer, final String pExistingCustomerECMId) {
+        final List<ListGroup> lListGroups = mListGroupRepository.findByCustomerCustomerECMId(pExistingCustomerECMId);
         if (null != lListGroups && !lListGroups.isEmpty()) {
-            for (final ListGroup lListGroupItem : lListGroups) {
-                lListGroupItem.setCustomer(pCustomer);
-                mLogger.debug("Moved List Group : {} to Customer : {}", lListGroupItem.getGroupId(), pCustomer.getCustomerECMId());
+            for (final ListGroup lListGroup : lListGroups) {
+                lListGroup.setCustomer(pCustomer);
+                mLogger.debug("Moved List Group : {} from Customer : {} to {} ", lListGroup.getGroupId(), pExistingCustomerECMId,
+                        pCustomer.getCustomerECMId());
             }
             mListGroupRepository.saveAll(lListGroups);
         }
@@ -139,15 +138,16 @@ public class CustomerMergeProcessor {
      * <b>checkAndMoveExistingSharedLists</b> - Check and move existing shared lists
      *
      * @param pCustomer         - the New Customer
-     * @param pOldCustomerECMId - the Old Customer ECM Id
+     * @param pExistingCustomerECMId - the Existing Customer ECM Id
      */
-    private void checkAndMoveExistingSharedLists(final Customer pCustomer, final String pOldCustomerECMId) {
-        List<ListToCustomer> lListToCustomers = mListToCustomerRepository.findByIdCustomerECMId(pOldCustomerECMId);
+    private void checkAndMoveExistingSharedLists(final Customer pCustomer, final String pExistingCustomerECMId) {
+        final List<ListToCustomer> lListToCustomers = mListToCustomerRepository.findByIdCustomerECMId(pExistingCustomerECMId);
 
         if (null != lListToCustomers && !lListToCustomers.isEmpty()) {
             lListToCustomers.forEach(lListToCustomer -> {
                 lListToCustomer.getId().setCustomerECMId(pCustomer.getCustomerECMId());
-                mLogger.debug("Moved List : {} to Customer : {}", lListToCustomer.getId().getListId(), lListToCustomer.getId().getCustomerECMId());
+                mLogger.debug("Moved List : {} from Customer : {} : {}", lListToCustomer.getId().getListId(), pExistingCustomerECMId,
+                        lListToCustomer.getId().getCustomerECMId());
             });
             mListToCustomerRepository.saveAll(lListToCustomers);
         }

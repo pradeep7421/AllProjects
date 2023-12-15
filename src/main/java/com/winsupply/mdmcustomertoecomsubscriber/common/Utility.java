@@ -24,7 +24,7 @@ public class Utility {
     private static Map<String, Integer> lRoleMap = new HashMap<>();
 
     static {
-        lPhoneNumberTypesMap.put("LB", "Not Specified");
+        lPhoneNumberTypesMap.put("LB", "Land Business");
         lPhoneNumberTypesMap.put("MB", "Mobile");
         lPhoneNumberTypesMap.put("ALT", "Alternate");
         lPhoneNumberTypesMap.put("ON-SMS", "SMS");
@@ -72,12 +72,12 @@ public class Utility {
     }
 
     /**
-     * <b>getContactRole</b> - it returns the Role id based on role type
+     * <b>getContactRole</b> - It returns the Role Id based on role type
      *
      * @param pType - the Type
-     * @return - Short
+     * @return - Integer
      */
-    public static Integer getContactRole(String pType) {
+    public static Integer getContactRole(final String pType) {
         return lRoleMap.get(pType);
     }
 }
