@@ -1,16 +1,16 @@
 package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 
-import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * Customer Repository
+ * Address Repository
  *
- * @author Ankit Jain
+ * @author Purushotham Reddy T
  *
  */
 @Repository
-public interface CustomerRepository extends JpaRepository<Customer, String> {
+public interface AddressRepository extends JpaRepository<Address, Long> {
 
 }

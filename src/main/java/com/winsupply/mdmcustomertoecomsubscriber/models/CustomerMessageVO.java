@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Set;
 import lombok.Data;
 
 /**
@@ -20,7 +21,12 @@ public class CustomerMessageVO {
 
     private String fullName;
 
+    private String interCompanyId;
+
     private String proRewardsId;
+
+    @JsonProperty("vmiLocations")
+    private List<String> resupplyLocations;
 
     private String winCCA;
 
@@ -28,13 +34,15 @@ public class CustomerMessageVO {
 
     private List<Email> emails;
 
-    private List<Phone> phones;
+    private List<PhoneVO> phones;
 
-    private List<Address> addresses;
+    private List<AddressVO> addresses;
 
     private List<Contact> contacts;
 
     private List<Account> wiseAccounts;
+
+    private List<AtgAccount> atgAccounts;
 
     @Data
     @JsonInclude(Include.NON_NULL)
@@ -56,7 +64,7 @@ public class CustomerMessageVO {
 
     @Data
     @JsonInclude(Include.NON_NULL)
-    public static class Phone {
+    public static class PhoneVO {
 
         private String phoneNumber;
 
@@ -67,7 +75,7 @@ public class CustomerMessageVO {
 
     @Data
     @JsonInclude(Include.NON_NULL)
-    public static class Address {
+    public static class AddressVO {
 
         private String addressLine1;
 
@@ -92,20 +100,31 @@ public class CustomerMessageVO {
 
         private String lastName;
 
-        @JsonProperty("userId")
         private String userId;
 
-        @JsonProperty("jobTitle")
+        private String contactECommerceStatus;
+
+        private Set<String> communicationPreference = null;
+
         private String jobTitle;
 
-        @JsonProperty("role")
         private String role;
 
-        @JsonProperty("contactEmails")
-        private List<Email> contactEmails;
+        private String industries;
 
-        @JsonProperty("contactPhones")
-        private List<Phone> contactPhones;
+        private List<ContactEmail> contactEmails;
+
+        private List<PhoneVO> contactPhones;
+
+        @Data
+        @JsonInclude(Include.NON_NULL)
+        public static class ContactEmail {
+            private String emailAddress;
+            private String emailType;
+            private String optOutInd;
+            private String preferenceLevel;
+            private String comments;
+        }
     }
 
     @Data
@@ -120,6 +139,8 @@ public class CustomerMessageVO {
 
         private String interCompanyCode;
 
+        private String accountEcommerceStatus;
+
         private String fullName;
 
         private String status;
@@ -131,18 +152,8 @@ public class CustomerMessageVO {
 
         private List<SubAccount> wiseSubAccounts;
 
-        @JsonProperty("alternateNames")
-        private List<AlternateName> alternateNames;
-
         @JsonProperty("addresses")
-        private List<Address> addresses;
-
-        @Data
-        @JsonInclude(Include.NON_NULL)
-        public static class AlternateName {
-
-            private String alternateNameId;
-        }
+        private List<AddressVO> addresses;
 
         @Data
         @JsonInclude(Include.NON_NULL)
@@ -152,15 +163,19 @@ public class CustomerMessageVO {
 
             private String proRewardsId;
 
-            private String primarySalesPerson;
-
-            private String secondarySalesPerson;
-
             private String creditLimit;
 
             private String creditDiscountEligible;
 
-            private String pricingColumnCode;
+            private String freightPercent;
+
+            private String freightCost;
+
+            private String poReqCode;
+
+            private String billToAccount;
+
+            private String cashSale;
         }
 
         @Data
@@ -177,15 +192,11 @@ public class CustomerMessageVO {
 
             private SubAccountDetail subAccountDetail;
 
-            private List<Address> subAccountAddresses;
-
-            private List<AlternateName> alternateNames;
+            private List<AddressVO> subAccountAddresses;
 
             @Data
             @JsonInclude(Include.NON_NULL)
             public static class SubAccountDetail {
-
-                private String primarySalesPerson;
 
                 private String proRewardsId;
 
@@ -194,7 +205,22 @@ public class CustomerMessageVO {
                 private String creditStatusCode;
 
                 private String secondarySalesPerson;
+
+                private String poReqCode;
+
+                private String freightPercent;
+
+                private String freightCost;
             }
         }
+    }
+
+    @Data
+    @JsonInclude(Include.NON_NULL)
+    public static class AtgAccount {
+
+        private String atgSystemSrcId;
+
+        private String type;
     }
 }

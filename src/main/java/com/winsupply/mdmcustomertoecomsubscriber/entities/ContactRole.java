@@ -25,7 +25,7 @@ public class ContactRole {
 
     @Id
     @Column(name = "role_id")
-    private Long roleId;
+    private Integer roleId;
 
     @Column(name = "role_desc", length = 30, nullable = false)
     private String roleDesc;

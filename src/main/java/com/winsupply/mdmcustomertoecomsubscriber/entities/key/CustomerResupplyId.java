@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Customer Account Key
+ * CustomerResupply Id
  *
- * @author Purushotham Reddy T
+ * @author Amritanshu
  */
 @Embeddable
 @Setter
@@ -21,16 +21,13 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CustomerAccountId implements Serializable {
+public class CustomerResupplyId implements Serializable {
 
     @Column(name = "customer_ecm_id")
     private String customerECMId;
 
-    @Column(name = "company_number")
-    private String companyNumber;
-
-    @Column(name = "attribute_name")
-    private String attributeName;
+    @Column(name = "resupply_location")
+    private String resupplyLocation;
 
     @Override
     public boolean equals(Object o) {
@@ -39,14 +36,13 @@ public class CustomerAccountId implements Serializable {
         if (o == null || getClass() != o.getClass())
             return false;
 
-        CustomerAccountId that = (CustomerAccountId) o;
+        CustomerResupplyId that = (CustomerResupplyId) o;
 
-        return Objects.equals(customerECMId, that.customerECMId) && Objects.equals(companyNumber, that.companyNumber)
-                && Objects.equals(attributeName, that.attributeName);
+        return Objects.equals(customerECMId, that.customerECMId) && Objects.equals(resupplyLocation, that.resupplyLocation);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(customerECMId, companyNumber, attributeName);
+        return Objects.hash(customerECMId, resupplyLocation);
     }
 }

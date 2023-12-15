@@ -1,7 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.entities;
 
-import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerAccountId;
-import jakarta.persistence.Column;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerAccountNumberId;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -12,23 +11,21 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Customer Account Entity
+ * Customer Account Number Entity
  *
- * @author Purushotham Reddy T
+ * @author Amritanshu
  *
  */
 @Entity
-@Table(name = "customer_account", schema = "ecom")
+@Table(name = "customer_account_number", schema = "ecom")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CustomerAccount {
+public class CustomerAccountNumber {
 
     @EmbeddedId
-    private CustomerAccountId id;
+    private CustomerAccountNumberId id;
 
-    @Column(name = "attribute_value")
-    private String attributeValue;
 }
