@@ -88,12 +88,12 @@ public class ContactProcessor {
      * @param pCustomerMessageVO - the CustomerMessage
      */
     public void createOrUpdateContacts(final Customer pCustomer, final CustomerMessageVO pCustomerMessageVO) {
-        if (CollectionUtils.isEmpty(pCustomerMessageVO.getContacts())) {
+        List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
+        if (CollectionUtils.isEmpty(lContacts)) {
             mLogger.debug("Contacts is empty, deleting the existing contacts in database.");
             deleteCustomerAllContacts(pCustomerMessageVO.getCustomerEcmId());
         } else {
             deleteContactsRemovedFromCustomer(pCustomerMessageVO);
-            List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
             for (CustomerMessageVO.Contact lContactVO : lContacts) {
                 final String lUserId = lContactVO.getUserId();
                 if (StringUtils.hasText(lUserId) && Utility.isValidEmail(lUserId)) {
