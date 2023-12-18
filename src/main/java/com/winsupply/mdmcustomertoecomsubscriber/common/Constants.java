@@ -25,4 +25,8 @@ public class Constants {
     public static final String FX = "FX";
     public static final String PHONE_EXTRACT_REGEX = "[^0-9+]";
     public static final String YES_KEY = "Y";
+    public static final String EMAIL_FAILURE_SUBJECT = "email.failure.subject";
+    public static final String EMAIL_FAILURE_BODY = "email.failure.message";
+    public static final String EMAIL_SUCCESS_SUBJECT = "email.success.subject";
+    public static final String EMAIL_SUCCESS_BODY = "email.success.message";
 }

@@ -1,7 +1,9 @@
 package com.winsupply.mdmcustomertoecomsubscriber.service;
 
+import com.win.email.service.EmailService;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Constants;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
+import com.winsupply.mdmcustomertoecomsubscriber.config.EmailConfig;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.CustomerResupply;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.CustomerResupplyId;
@@ -18,12 +20,18 @@ import com.winsupply.mdmcustomertoecomsubscriber.processor.CustomerAccountProces
 import com.winsupply.mdmcustomertoecomsubscriber.processor.CustomerMergeProcessor;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerResupplyRepository;
+import jakarta.annotation.PostConstruct;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +65,30 @@ public class CustomerSubscriberService {
 
     private final ContactProcessor mContactProcessor;
 
+    public EmailService mEmailService;
+
+    public final EmailConfig mEmailConfig;
+
+    private int failureCount;
+
+    private int successCount;
+
+    private Timer timer;
+
+    /**
+     * <b>initialize</b> - Initialize the EmailService component
+     */
+    @PostConstruct
+    public void initialize() {
+        mEmailService = new EmailService(mEmailConfig.getMailFrom(), mEmailConfig.getMailTos(), mEmailConfig.getHost(), mEmailConfig.getThreshold(),
+                mEmailConfig.getSecondThreshold(), mEmailConfig.getThirdThreshold(), mEmailConfig.getSuccessThreshold(), mEmailConfig.getBatchSize(),
+                mEmailConfig.getTimePeriod());
+        TimerTask lTimeTask = mEmailService.initializeTimerTask();
+        timer = new Timer();
+        timer.schedule(lTimeTask, 0, mEmailConfig.getTimePeriod());
+
+    }
+
     /**
      * Process the Customer Message
      *
@@ -66,9 +98,10 @@ public class CustomerSubscriberService {
     @Transactional
     public void processCustomerMessage(final String pPayload, final MessageHeaders pMessageHeaders) {
         final String lActionCode = (String) pMessageHeaders.get("action_code");
+        String lCustomerECMId = null;
         try {
             final CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(pPayload, CustomerMessageVO.class);
-            final String lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();
+            lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();
 
             mLogger.info("Processing customerECMId {}, Action {}...", lCustomerECMId, lActionCode);
             if (!StringUtils.hasText(lCustomerECMId)) {
@@ -89,8 +122,10 @@ public class CustomerSubscriberService {
                 mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
             }
 
+            sendSuccessEmail();
         } catch (final Exception lException) {
             mLogger.error("Exception -> ", lException);
+            sendFailureEmail(lCustomerECMId, lException);
         }
     }
 
@@ -273,5 +308,50 @@ public class CustomerSubscriberService {
         final CustomerResupplyId lCustomerResupplyId = CustomerResupplyId.builder().customerECMId(pCustomerECMId).resupplyLocation(pResupplyLocation)
                 .build();
         return CustomerResupply.builder().id(lCustomerResupplyId).build();
+    }
+
+    /**
+     * <b>sendSuccessEmail</b> - It sends the success email
+     *
+     */
+    private void sendSuccessEmail() {
+        successCount++;
+        final String lFailureEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_SUBJECT), mEmailConfig.getEnvironment());
+        final String lPayloadStorageStr = mEmailService.getPayloadStorage() == null ? "" : mEmailService.getPayloadStorage().toString();
+        final String lFailureEmailMessage = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_BODY),
+                "Failed Payload  ->  " + lPayloadStorageStr);
+
+        final String lSuccessEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_SUCCESS_SUBJECT), mEmailConfig.getEnvironment());
+        final String lSuccessEmailMessage = mResourceBundle.getString(Constants.EMAIL_SUCCESS_BODY);
+        final boolean lIsSuccess = mEmailService.successCheck(failureCount, successCount, lFailureEmailMessage, lFailureEmailSubject,
+                lSuccessEmailMessage, lSuccessEmailSubject);
+        if (lIsSuccess) {
+            failureCount = 0;
+        }
+    }
+
+    /**
+     * <b>sendFailureEmail</b> - It sends the failure email
+     *
+     * @param pCustomerECMId - the pCustomerECMId
+     * @param pException - the Exception
+     */
+    private void sendFailureEmail(final String pCustomerECMId, final Exception pException) {
+        failureCount++;
+        successCount = 0;
+
+        final StringWriter lErrorWriter = new StringWriter();
+        pException.printStackTrace(new PrintWriter(lErrorWriter));
+        String lErrorStr = lErrorWriter.toString();
+        if (lErrorStr.length() > 600) {
+            lErrorStr = lErrorStr.substring(0, 600);
+        }
+        String lMessage = "Message with Customer ECM Id  ->  " + pCustomerECMId + "     ::     Exception ->  " + lErrorStr;
+
+        final String lEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_SUBJECT), mEmailConfig.getEnvironment());
+        final String lEmailMessage = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_BODY), lMessage);
+        mEmailService.setEmailSubject(lEmailSubject);
+        mEmailService.setEmailBody(lEmailMessage);
+        mEmailService.failureCheck(failureCount, pCustomerECMId, "IMPORTANT");
     }
 }

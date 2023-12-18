@@ -31,7 +31,6 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderEmailAddressR
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneTypeRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -109,9 +108,9 @@ public class ContactProcessor {
     /**
      * <b>processContactData</b> - it process the contact's data
      *
-     * @param pCustomer - the Customer
+     * @param pCustomer          - the Customer
      * @param pCustomerMessageVO - the Customer Message
-     * @param pContactVO - Contact
+     * @param pContactVO         - Contact
      */
     private void processContactData(final Customer pCustomer, final CustomerMessageVO pCustomerMessageVO,
             final CustomerMessageVO.Contact pContactVO) {
@@ -193,7 +192,8 @@ public class ContactProcessor {
     }
 
     /**
-     * <b>deleteCustomerAllContacts</b> - It deletes the customer's contact and it's related data
+     * <b>deleteCustomerAllContacts</b> - It deletes the customer's contact and it's
+     * related data
      *
      * @param pCustomerECMId - the Customer ECM Id
      */
@@ -241,8 +241,8 @@ public class ContactProcessor {
             lAddressId = pContact.getAddress().getId();
         }
 
-        dissociateQuotesFromContact(pContact);
-        dissociateListGroupsFromContact(pContact);
+        dissociateQuotesFromContact(pContact.getContactECMId());
+        dissociateListGroupsFromContact(pContact.getContactECMId());
         mContactRepository.deleteById(pContact.getContactECMId());
         if (null != lAddressId) {
             mAddressRepository.deleteById(lAddressId);
@@ -393,14 +393,14 @@ public class ContactProcessor {
     /**
      * <b>dissociateQuotesFromContact</b> - it dissociates quotes from contact
      *
-     * @param pContact         - the Contact
+     * @param pContactECMId - the ContactECMId
      */
-    private void dissociateQuotesFromContact(final Contact pContact) {
-        final List<Quote> lQuotes = mQuoteRepository.findByContactContactECMId(pContact.getContactECMId());
+    private void dissociateQuotesFromContact(final String pContactECMId) {
+        final List<Quote> lQuotes = mQuoteRepository.findByContactContactECMId(pContactECMId);
         if (lQuotes != null && !lQuotes.isEmpty()) {
             for (final Quote lQuoteItem : lQuotes) {
                 lQuoteItem.setContact(null);
-                mLogger.debug("Quote : {} unlinked from contact with contactECMId : {} ", lQuoteItem.getQuoteId(), pContact.getContactECMId());
+                mLogger.debug("Quote : {} unlinked from contact with contactECMId : {} ", lQuoteItem.getQuoteId(), pContactECMId);
             }
             mQuoteRepository.saveAll(lQuotes);
         }
@@ -410,14 +410,14 @@ public class ContactProcessor {
      * <b>dissociateListGroupsFromContact</b> - it dissociates ListGroups from
      * contact
      *
-     * @param pContact - the Contact
+     * @param pContactECMId - the ContactECMId
      */
-    private void dissociateListGroupsFromContact(final Contact pContact) {
-        List<ListGroup> lListGroups = mListGroupRepository.findByContactContactECMId(pContact.getContactECMId());
+    private void dissociateListGroupsFromContact(final String pContactECMId) {
+        List<ListGroup> lListGroups = mListGroupRepository.findByContactContactECMId(pContactECMId);
         if (null != lListGroups && !lListGroups.isEmpty()) {
             for (final ListGroup lListGroupItem : lListGroups) {
                 lListGroupItem.setContact(null);
-                mLogger.debug("List Group : {} unlined from contact with contactECMId : {}", lListGroupItem.getGroupId(), pContact.getContactECMId());
+                mLogger.debug("List Group : {} unlined from contact with contactECMId : {}", lListGroupItem.getGroupId(), pContactECMId);
             }
             mListGroupRepository.saveAll(lListGroups);
         }

@@ -56,7 +56,6 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation "com.win:win-subscriber-error-email-plugin:1.0.2"
     implementation 'org.springframework.boot:spring-boot-starter-freemarker'
     implementation group: 'javax.jms', name: 'jms', version: '1.1'
