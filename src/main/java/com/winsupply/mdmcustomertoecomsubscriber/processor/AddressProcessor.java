@@ -87,16 +87,14 @@ public class AddressProcessor {
     /**
      * This method is used to create the Address from the AddressVO
      *
-     * @param pAddressEntity - the Address
-     * @param pAddress       - the address
+     * @param pAddressEntity - the Address Entity
+     * @param pAddress       - the Address VO
      * @param pCustomerName  - the Customer Name
      * @return Address
      */
     private Address populateAddressObject(final Address pAddressEntity, final AddressVO pAddress, final String pCustomerName) {
         pAddressEntity.setAddress1(pAddress.getAddressLine1());
-        if (StringUtils.hasText(pAddress.getAddressLine2())) {
-            pAddressEntity.setAddress2(pAddress.getAddressLine2());
-        }
+        pAddressEntity.setAddress2(pAddress.getAddressLine2());
         pAddressEntity.setCity(pAddress.getCity());
         pAddressEntity.setState(pAddress.getState());
         pAddressEntity.setPostalCode(pAddress.getPostalCode());

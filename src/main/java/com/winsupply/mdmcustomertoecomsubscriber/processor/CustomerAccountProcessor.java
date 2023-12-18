@@ -191,9 +191,9 @@ public class CustomerAccountProcessor {
     }
 
     /**
-     * <b>resetCustomerData</b> - It resets the customer data
+     * <b>resetCustomerAccountsData</b> - It resets the customer's account data
      *
-     * @param pCustomerECMId - the CustomerECMId
+     * @param pCustomerECMId - the customer ECM Id
      */
     public void resetCustomerAccountsData(final String pCustomerECMId) {
         mCustomerAccountRepository.deleteAllByCustomerECMId(pCustomerECMId);

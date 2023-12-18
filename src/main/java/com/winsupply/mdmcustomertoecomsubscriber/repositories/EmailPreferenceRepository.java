@@ -19,5 +19,5 @@ public interface EmailPreferenceRepository extends JpaRepository<EmailPreference
      * @param pEmailPreferenceDesc - the email preference description
      * @return - Optional<EmailPreference>
      */
-    Optional<EmailPreference> findByEmailPreferenceDesc(@Param("emailPreferenceDesc") String pEmailPreferenceDesc);
+    Optional<EmailPreference> findByEmailPreferenceDescIgnoreCase(@Param("emailPreferenceDesc") String pEmailPreferenceDesc);
 }

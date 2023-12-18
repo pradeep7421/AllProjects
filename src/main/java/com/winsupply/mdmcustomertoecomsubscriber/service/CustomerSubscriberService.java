@@ -113,10 +113,10 @@ public class CustomerSubscriberService {
             } else {
                 Customer lCustomer = createOrUpdateCustomer(lCustomerMessageVO);
 
-                final List<AtgAccount> lAtgAccounts = lCustomerMessageVO.getAtgAccounts();
-                if (lAtgAccounts != null && (lAtgAccounts.size() > 1
-                        || (lAtgAccounts.size() == 1 && !lAtgAccounts.get(0).getAtgSystemSrcId().equals(lCustomer.getCustomerECMId())))) {
-                    mCustomerMergeProcessor.mergeCustomer(lCustomer, lAtgAccounts);
+                final List<AtgAccount> lExistingCustomers = lCustomerMessageVO.getAtgAccounts();
+                if (lExistingCustomers != null && (lExistingCustomers.size() > 1
+                        || (lExistingCustomers.size() == 1 && !lExistingCustomers.get(0).getAtgSystemSrcId().equals(lCustomer.getCustomerECMId())))) {
+                    mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers);
                 }
 
                 mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
@@ -198,6 +198,7 @@ public class CustomerSubscriberService {
                 final String lType = lEmail.getEmailType();
                 if (StringUtils.hasText(lType) && Constants.EW_EMAIL_TYPE.equalsIgnoreCase(lType)) {
                     pCustomer.setEmail(lEmailAddress);
+                    break;
                 }
             }
         } else {
