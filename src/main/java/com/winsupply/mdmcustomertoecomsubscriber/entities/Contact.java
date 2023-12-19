@@ -1,5 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.entities;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -67,7 +68,7 @@ public class Contact {
     @JoinColumn(name = "contact_role_id", referencedColumnName = "role_id", nullable = false)
     private ContactRole role;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "contact_address_id", referencedColumnName = "address_id")
     private Address address;
 }

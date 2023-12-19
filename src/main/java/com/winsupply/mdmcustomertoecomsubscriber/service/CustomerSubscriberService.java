@@ -112,14 +112,13 @@ public class CustomerSubscriberService {
                 // TODO deleteCustomer(lCustomerEcmId);
             } else {
                 Customer lCustomer = createOrUpdateCustomer(lCustomerMessageVO);
+                mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
 
                 final List<AtgAccount> lExistingCustomers = lCustomerMessageVO.getAtgAccounts();
                 if (lExistingCustomers != null && (lExistingCustomers.size() > 1
                         || (lExistingCustomers.size() == 1 && !lExistingCustomers.get(0).getAtgSystemSrcId().equals(lCustomer.getCustomerECMId())))) {
                     mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers);
                 }
-
-                mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
             }
 
             sendSuccessEmail();

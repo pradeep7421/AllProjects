@@ -30,8 +30,8 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListGroupRepositor
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderEmailAddressRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneTypeRepository;
-import java.time.LocalDateTime;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -166,9 +166,6 @@ public class ContactProcessor {
         if (null != pContactEntity.getAddress()) {
             mPhoneRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
             mOrderEmailAddressRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
-            Long lAddressId = pContactEntity.getAddress().getId();
-            pContactEntity.setAddress(null);
-            mAddressRepository.deleteById(lAddressId);
         }
 
         createContactEmailPreferences(pContact);
@@ -206,8 +203,10 @@ public class ContactProcessor {
             final Set<Contact> lContactsToDelete = lContactsDB.stream().filter(lContact -> !lContactECMIds.contains(lContact.getContactECMId()))
                     .collect(Collectors.toSet());
             mLogger.debug("CustomerECMId : {}, List of Contacts for deletion : {}", pCustomerMessageVO.getCustomerEcmId(), lContactsToDelete);
-            for (Contact lContact : lContactsToDelete) {
-                deleteContact(lContact);
+            if (!CollectionUtils.isEmpty(lContactsToDelete)) {
+                for (Contact lContact : lContactsToDelete) {
+                    deleteContact(lContact);
+                }
             }
         }
     }
@@ -220,19 +219,14 @@ public class ContactProcessor {
     private void deleteContact(final Contact pContact) {
         mContactEmailPreferenceRepository.deleteAllByIdContactEcmId(pContact.getContactECMId());
         mContactIndustryPreferenceRepository.deleteAllByIdContactEcmId(pContact.getContactECMId());
-        Long lAddressId = null;
         if (null != pContact.getAddress()) {
             mPhoneRepository.deleteAllByAddressId(pContact.getAddress().getId());
             mOrderEmailAddressRepository.deleteAllByAddressId(pContact.getAddress().getId());
-            lAddressId = pContact.getAddress().getId();
         }
 
         dissociateQuotesFromContact(pContact.getContactECMId());
         dissociateListGroupsFromContact(pContact.getContactECMId());
         mContactRepository.deleteById(pContact.getContactECMId());
-        if (null != lAddressId) {
-            mAddressRepository.deleteById(lAddressId);
-        }
     }
 
     /**
