@@ -4,6 +4,7 @@ import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ListGroup;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ListToCustomer;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Order;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Quote;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.key.ListToCustomerId;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.AtgAccount;
@@ -12,6 +13,7 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerRepository
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerResupplyRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListGroupRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListToCustomerRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +47,8 @@ public class CustomerMergeProcessor {
 
     private final CustomerResupplyRepository mCustomerResupplyRepository;
 
+    private final OrderRepository mOrderRepository;
+
     private final CustomerAccountProcessor mCustomerAccountProcessor;
 
     /**
@@ -75,6 +79,8 @@ public class CustomerMergeProcessor {
                     checkAndMoveExistingListGroups(pNewCustomer, lExistingCustomerECMId);
                     // Check and Move existing shared list
                     checkAndMoveExistingSharedLists(pNewCustomer, lExistingCustomerECMId);
+                    // Check and Move existing orders
+                    checkAndMoveExistingOrders(pNewCustomer, lExistingCustomerECMId);
 
                     mCustomerRepository.deleteById(lExistingCustomerECMId);
                 });
@@ -83,6 +89,25 @@ public class CustomerMergeProcessor {
                 mLogger.error("Exception while deleting lExistingCustomerECMId -> {}", lExistingCustomerECMId);
                 throw lException;
             }
+        }
+    }
+
+    /**
+     * <b>checkAndMoveExistingOrders</b> - it moves the existing orders to new
+     * customers
+     *
+     * @param pNewCustomer           - the New Customer
+     * @param pExistingCustomerECMId - the Existing Customer ECM Id
+     */
+    private void checkAndMoveExistingOrders(final Customer pNewCustomer, final String pExistingCustomerECMId) {
+        final List<Order> lOrders = mOrderRepository.findByCustomerCustomerECMId(pExistingCustomerECMId);
+        if (lOrders != null && !lOrders.isEmpty()) {
+            for (final Order lOrder : lOrders) {
+                lOrder.setCustomer(pNewCustomer);
+                mLogger.debug("Moved Order : {} from Customer : {} to {} ", lOrder.getOrderId(), pExistingCustomerECMId,
+                        pNewCustomer.getCustomerECMId());
+            }
+            mOrderRepository.saveAll(lOrders);
         }
     }
 
@@ -160,7 +185,7 @@ public class CustomerMergeProcessor {
      *
      * @param pListIds       - the list ids
      * @param pCustomerECMId - the Customer ECM id
-     * @return List<ListToCustomer>
+     * @return - List<ListToCustomer>
      */
     private List<ListToCustomer> createListToCustomers(final List<Integer> pListIds, final String pCustomerECMId) {
         return pListIds.stream().map(lListId -> {

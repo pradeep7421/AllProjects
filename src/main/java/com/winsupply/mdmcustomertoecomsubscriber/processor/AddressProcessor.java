@@ -36,7 +36,7 @@ public class AddressProcessor {
     }
 
     /**
-     * <b>setShippingAddr</b> - Set Shipping Address.
+     * <b>setShippingAddress</b> - Set Shipping Address.
      *
      * @param pCustomer    - the Customer
      * @param pAddressList - the Address List
@@ -60,7 +60,7 @@ public class AddressProcessor {
     }
 
     /**
-     * <b>setBillingAddr</b> - Set Billing Address.
+     * <b>setBillingAddress</b> - Set Billing Address.
      *
      * @param pCustomer         - the Customer
      * @param pAddressList      - the Address List

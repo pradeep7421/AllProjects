@@ -18,5 +18,5 @@ public interface OrderEmailAddressRepository extends JpaRepository<OrderEmailAdd
      *
      * @param pAddressId - the Address Id
      */
-    void deleteAllByAddressId(Long pAddressId);
+    void deleteAllByAddressId(Integer pAddressId);
 }

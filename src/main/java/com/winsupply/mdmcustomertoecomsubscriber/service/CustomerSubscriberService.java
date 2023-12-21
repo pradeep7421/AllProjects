@@ -69,11 +69,11 @@ public class CustomerSubscriberService {
 
     public final EmailConfig mEmailConfig;
 
-    private int failureCount;
+    private int mFailureCount;
 
-    private int successCount;
+    private int mSuccessCount;
 
-    private Timer timer;
+    private Timer mTimer;
 
     /**
      * <b>initialize</b> - Initialize the EmailService component
@@ -83,9 +83,9 @@ public class CustomerSubscriberService {
         mEmailService = new EmailService(mEmailConfig.getMailFrom(), mEmailConfig.getMailTos(), mEmailConfig.getHost(), mEmailConfig.getThreshold(),
                 mEmailConfig.getSecondThreshold(), mEmailConfig.getThirdThreshold(), mEmailConfig.getSuccessThreshold(), mEmailConfig.getBatchSize(),
                 mEmailConfig.getTimePeriod());
-        TimerTask lTimeTask = mEmailService.initializeTimerTask();
-        timer = new Timer();
-        timer.schedule(lTimeTask, 0, mEmailConfig.getTimePeriod());
+        final TimerTask lTimeTask = mEmailService.initializeTimerTask();
+        mTimer = new Timer();
+        mTimer.schedule(lTimeTask, 0, mEmailConfig.getTimePeriod());
 
     }
 
@@ -111,7 +111,7 @@ public class CustomerSubscriberService {
             if (StringUtils.hasText(lActionCode) && "delete".equalsIgnoreCase(lActionCode)) {
                 // TODO deleteCustomer(lCustomerEcmId);
             } else {
-                Customer lCustomer = createOrUpdateCustomer(lCustomerMessageVO);
+                final Customer lCustomer = createOrUpdateCustomer(lCustomerMessageVO);
                 mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
 
                 final List<AtgAccount> lExistingCustomers = lCustomerMessageVO.getAtgAccounts();
@@ -125,6 +125,8 @@ public class CustomerSubscriberService {
         } catch (final Exception lException) {
             mLogger.error("Exception -> ", lException);
             sendFailureEmail(lCustomerECMId, lException);
+        } finally {
+            mCustomerAccountProcessor.setSubAccountCustomerNumbers(null);
         }
     }
 
@@ -139,7 +141,7 @@ public class CustomerSubscriberService {
         final String lCustomerECMId = pCustomerMessageVO.getCustomerEcmId();
 
         Customer lCustomer = null;
-        Optional<Customer> lCustomerDBRecord = mCustomerRepository.findById(lCustomerECMId);
+        final Optional<Customer> lCustomerDBRecord = mCustomerRepository.findById(lCustomerECMId);
 
         if (lCustomerDBRecord.isEmpty()) {
             lCustomer = new Customer();
@@ -315,7 +317,7 @@ public class CustomerSubscriberService {
      *
      */
     private void sendSuccessEmail() {
-        successCount++;
+        mSuccessCount++;
         final String lFailureEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_SUBJECT), mEmailConfig.getEnvironment());
         final String lPayloadStorageStr = mEmailService.getPayloadStorage() == null ? "" : mEmailService.getPayloadStorage().toString();
         final String lFailureEmailMessage = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_BODY),
@@ -323,10 +325,10 @@ public class CustomerSubscriberService {
 
         final String lSuccessEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_SUCCESS_SUBJECT), mEmailConfig.getEnvironment());
         final String lSuccessEmailMessage = mResourceBundle.getString(Constants.EMAIL_SUCCESS_BODY);
-        final boolean lIsSuccess = mEmailService.successCheck(failureCount, successCount, lFailureEmailMessage, lFailureEmailSubject,
+        final boolean lIsSuccess = mEmailService.successCheck(mFailureCount, mSuccessCount, lFailureEmailMessage, lFailureEmailSubject,
                 lSuccessEmailMessage, lSuccessEmailSubject);
         if (lIsSuccess) {
-            failureCount = 0;
+            mFailureCount = 0;
         }
     }
 
@@ -337,8 +339,8 @@ public class CustomerSubscriberService {
      * @param pException - the Exception
      */
     private void sendFailureEmail(final String pCustomerECMId, final Exception pException) {
-        failureCount++;
-        successCount = 0;
+        mFailureCount++;
+        mSuccessCount = 0;
 
         final StringWriter lErrorWriter = new StringWriter();
         pException.printStackTrace(new PrintWriter(lErrorWriter));
@@ -346,12 +348,12 @@ public class CustomerSubscriberService {
         if (lErrorStr.length() > 600) {
             lErrorStr = lErrorStr.substring(0, 600);
         }
-        String lMessage = "Message with Customer ECM Id  ->  " + pCustomerECMId + "     ::     Exception ->  " + lErrorStr;
+        final String lMessage = "Message with Customer ECM Id  ->  " + pCustomerECMId + "     ::     Exception ->  " + lErrorStr;
 
         final String lEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_SUBJECT), mEmailConfig.getEnvironment());
         final String lEmailMessage = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_BODY), lMessage);
         mEmailService.setEmailSubject(lEmailSubject);
         mEmailService.setEmailBody(lEmailMessage);
-        mEmailService.failureCheck(failureCount, pCustomerECMId, "IMPORTANT");
+        mEmailService.failureCheck(mFailureCount, pCustomerECMId, "IMPORTANT");
     }
 }

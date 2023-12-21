@@ -25,7 +25,7 @@ public class OrderEmailAddress {
     private Integer orderEmailAddressId;
 
     @Column(name = "address_id",  nullable = false)
-    private Long addressId;
+    private Integer addressId;
 
     @Column(name = "order_email_address", length = 250, nullable = false)
     private String orderEmailAddress;

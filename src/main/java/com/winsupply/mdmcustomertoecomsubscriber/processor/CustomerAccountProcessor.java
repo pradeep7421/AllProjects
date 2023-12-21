@@ -52,6 +52,8 @@ public class CustomerAccountProcessor {
 
     private final CustomerSubAccountProcessor mCustomerSubAccountProcessor;
 
+    private List<String> mSubAccountCustomerNumbers = null;
+
     /**
      * <b>importWiseAccountsData</b> - Import WISE accounts data
      *
@@ -86,6 +88,7 @@ public class CustomerAccountProcessor {
      */
     private void processFilteredAccounts(final Customer pCustomer, final String pInterCompanyId, final Map<String, Account> pFilteredAccountMap,
             final List<String> pInActiveCustomerSubAccounts) throws ECMException {
+        mSubAccountCustomerNumbers = new ArrayList<>();
         final List<CustomerAccount> lCustomerAccounts = new ArrayList<>();
         final Set<String> lAccountNumbers = new HashSet<>();
         final List<String> lCompanyNumbers = new ArrayList<>();
@@ -119,7 +122,9 @@ public class CustomerAccountProcessor {
                 lCustomerAccounts.addAll(lCustomerAccountAttributes);
             }
 
-            mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, pCustomer, lLocation.get());
+            final List<String> lSubAccountCustomerNumbersForAccount = mCustomerSubAccountProcessor.processSubAccountsData(lAccount,
+                    pInActiveCustomerSubAccounts, pCustomer, lLocation.get());
+            mSubAccountCustomerNumbers.addAll(lSubAccountCustomerNumbersForAccount);
             lIndex++;
         }
         if (lWinDefaultCompany == null || !lCompanyNumbers.contains(lWinDefaultCompany.getCompanyNumber())) {
@@ -299,7 +304,7 @@ public class CustomerAccountProcessor {
      *
      * @param pCustomerECMId - the Customer ECM Id
      * @param pAccountNumber - the Account Number
-     * @return CustomerAccountNumber
+     * @return - CustomerAccountNumber
      */
     private CustomerAccountNumber createCustomerAccountNumber(final String pCustomerECMId, final String pAccountNumber) {
         final CustomerAccountNumberId lCustomerAccountNumberId = CustomerAccountNumberId.builder().customerECMId(pCustomerECMId)
@@ -312,11 +317,29 @@ public class CustomerAccountProcessor {
      *
      * @param pCustomerECMId - the Customer ECM Id
      * @param pCompanyNumber - the Company Number
-     * @return CustomerLocation
+     * @return - CustomerLocation
      */
     private CustomerLocation createCustomerLocation(final String pCustomerECMId, final String pCompanyNumber) {
         final CustomerLocationId lCustomerLocationId = CustomerLocationId.builder().customerECMId(pCustomerECMId).companyNumber(pCompanyNumber)
                 .build();
         return CustomerLocation.builder().id(lCustomerLocationId).build();
+    }
+
+    /**
+     * Getter
+     *
+     * @return - List<String>
+     */
+    public List<String> getSubAccountCustomerNumbers() {
+        return mSubAccountCustomerNumbers;
+    }
+
+    /**
+     * Setter
+     *
+     * @param pSubAccountCustomerNumbers - SubAccount Customer Numbers
+     */
+    public void setSubAccountCustomerNumbers(final List<String> pSubAccountCustomerNumbers) {
+        mSubAccountCustomerNumbers = pSubAccountCustomerNumbers;
     }
 }

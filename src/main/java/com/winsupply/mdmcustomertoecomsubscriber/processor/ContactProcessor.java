@@ -6,11 +6,13 @@ import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactEmailPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactIndustryPreference;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactLocationPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ContactRole;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.EmailPreference;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Industry;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.ListGroup;
+import com.winsupply.mdmcustomertoecomsubscriber.entities.Order;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.OrderEmailAddress;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Phone;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.PhoneNumberType;
@@ -22,12 +24,16 @@ import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.Contac
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.AddressRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactEmailPreferenceRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactIndustryPreferenceRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactLocationPreferenceRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactOtherAddressRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactRecentlyViewedItemRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ContactRoleRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.EmailPreferenceRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.IndustryRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListGroupRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderEmailAddressRepository;
+import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneTypeRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
@@ -81,6 +87,16 @@ public class ContactProcessor {
 
     private final ListGroupRepository mListGroupRepository;
 
+    private final ContactLocationPreferenceRepository mContactLocationPreferenceRepository;
+
+    private final ContactRecentlyViewedItemRepository mContactRecentlyViewedItemRepository;
+
+    private final ContactOtherAddressRepository mContactOtherAddressRepository;
+
+    private final OrderRepository mOrderRepository;
+
+    private final CustomerAccountProcessor mCustomerAccountProcessor;
+
     /**
      * <b>createOrUpdateContacts</b> - It creates or updates the customer's contacts
      *
@@ -88,13 +104,15 @@ public class ContactProcessor {
      * @param pCustomerMessageVO - the CustomerMessage
      */
     public void createOrUpdateContacts(final Customer pCustomer, final CustomerMessageVO pCustomerMessageVO) {
-        List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
+        final List<CustomerMessageVO.Contact> lContacts = pCustomerMessageVO.getContacts();
         if (CollectionUtils.isEmpty(lContacts)) {
             mLogger.debug("Contacts is empty, deleting the existing contacts in database.");
             deleteCustomerAllContacts(pCustomerMessageVO.getCustomerEcmId());
         } else {
-            deleteContactsRemovedFromCustomer(pCustomerMessageVO);
-            for (CustomerMessageVO.Contact lContactVO : lContacts) {
+            deleteContactsNotPresentInCustomerMessage(pCustomerMessageVO);
+            for (final CustomerMessageVO.Contact lContactVO : lContacts) {
+                removeOutdatedDefaultSubAccountData(lContactVO);
+
                 final String lUserId = lContactVO.getUserId();
                 if (StringUtils.hasText(lUserId) && Utility.isValidEmail(lUserId)) {
                     processContactData(pCustomer, pCustomerMessageVO, lContactVO);
@@ -102,6 +120,26 @@ public class ContactProcessor {
                     mLogger.debug("Skipping Contact with ContactECMId : {}, due to invalid userId : {}", lContactVO.getContactEcmId(), lUserId);
                 }
             }
+        }
+    }
+
+    /**
+     * <b>removeOutdatedDefaultSubAccountData</b> - it removes outdated default sub account if present in contact location preference
+     *
+     * @param lContactVO - the Contact VO
+     */
+    private void removeOutdatedDefaultSubAccountData(final CustomerMessageVO.Contact lContactVO) {
+        final List<String> lSubAccountCustomerNumbers = mCustomerAccountProcessor.getSubAccountCustomerNumbers();
+        final List<ContactLocationPreference> lPreferenceList = mContactLocationPreferenceRepository
+                .findByIdContactECMIdAndIdPreferenceName(lContactVO.getContactEcmId(), "defaultJob");
+
+        if (!CollectionUtils.isEmpty(lPreferenceList) && !CollectionUtils.isEmpty(lSubAccountCustomerNumbers)) {
+            final List<String> ldefaultSubAccountList = lPreferenceList.stream().map(ContactLocationPreference::getPreferenceValue).collect(Collectors.toList());
+            ldefaultSubAccountList.removeAll(lSubAccountCustomerNumbers);
+
+            final List<ContactLocationPreference> lToDelete = lPreferenceList.stream()
+                    .filter(lItem -> ldefaultSubAccountList.contains(lItem.getPreferenceValue())).toList();
+            mContactLocationPreferenceRepository.deleteAll(lToDelete);
         }
     }
 
@@ -183,19 +221,19 @@ public class ContactProcessor {
     private void deleteCustomerAllContacts(final String pCustomerECMId) {
         final List<Contact> lContacts = mContactRepository.findByCustomerCustomerECMId(pCustomerECMId);
         if (!CollectionUtils.isEmpty(lContacts)) {
-            for (Contact lContact : lContacts) {
+            for (final Contact lContact : lContacts) {
                 deleteContact(lContact);
             }
         }
     }
 
     /**
-     * <b>deleteContactsRemovedFromCustomer</b> - It deletes the Contacts those are
-     * present in database however removed in Customer message
+     * <b>deleteContactsNotPresentInCustomerMessage</b> - It deletes the Contacts
+     * those are present in database however removed in Customer message
      *
-     * @param pCustomerMessageVO - the Customer Messsage
+     * @param pCustomerMessageVO - the Customer Message
      */
-    private void deleteContactsRemovedFromCustomer(final CustomerMessageVO pCustomerMessageVO) {
+    private void deleteContactsNotPresentInCustomerMessage(final CustomerMessageVO pCustomerMessageVO) {
         final List<String> lContactECMIds = pCustomerMessageVO.getContacts().stream().map(CustomerMessageVO.Contact::getContactEcmId).toList();
 
         final List<Contact> lContactsDB = mContactRepository.findByCustomerCustomerECMId(pCustomerMessageVO.getCustomerEcmId());
@@ -204,7 +242,7 @@ public class ContactProcessor {
                     .collect(Collectors.toSet());
             mLogger.debug("CustomerECMId : {}, List of Contacts for deletion : {}", pCustomerMessageVO.getCustomerEcmId(), lContactsToDelete);
             if (!CollectionUtils.isEmpty(lContactsToDelete)) {
-                for (Contact lContact : lContactsToDelete) {
+                for (final Contact lContact : lContactsToDelete) {
                     deleteContact(lContact);
                 }
             }
@@ -219,6 +257,10 @@ public class ContactProcessor {
     private void deleteContact(final Contact pContact) {
         mContactEmailPreferenceRepository.deleteAllByIdContactEcmId(pContact.getContactECMId());
         mContactIndustryPreferenceRepository.deleteAllByIdContactEcmId(pContact.getContactECMId());
+        mContactLocationPreferenceRepository.deleteAllByIdContactECMId(pContact.getContactECMId());
+        mContactRecentlyViewedItemRepository.deleteAllByIdContactECMId(pContact.getContactECMId());
+        mContactOtherAddressRepository.deleteAllByIdContactECMId(pContact.getContactECMId());
+
         if (null != pContact.getAddress()) {
             mPhoneRepository.deleteAllByAddressId(pContact.getAddress().getId());
             mOrderEmailAddressRepository.deleteAllByAddressId(pContact.getAddress().getId());
@@ -226,6 +268,7 @@ public class ContactProcessor {
 
         dissociateQuotesFromContact(pContact.getContactECMId());
         dissociateListGroupsFromContact(pContact.getContactECMId());
+        dissociateOrdersFromContact(pContact);
         mContactRepository.deleteById(pContact.getContactECMId());
     }
 
@@ -233,7 +276,6 @@ public class ContactProcessor {
      * <b>createContactEmailPreferences</b> - it creates the email preference
      *
      * @param pContactVO - the Contact VO
-     * @return - Set<ContactEmailPreference>
      */
     private void createContactEmailPreferences(final CustomerMessageVO.Contact pContactVO) {
         if (null != pContactVO.getCommunicationPreference() && !pContactVO.getCommunicationPreference().isEmpty()) {
@@ -387,13 +429,30 @@ public class ContactProcessor {
      * @param pContactECMId - the ContactECMId
      */
     private void dissociateListGroupsFromContact(final String pContactECMId) {
-        List<ListGroup> lListGroups = mListGroupRepository.findByContactContactECMId(pContactECMId);
+        final List<ListGroup> lListGroups = mListGroupRepository.findByContactContactECMId(pContactECMId);
         if (null != lListGroups && !lListGroups.isEmpty()) {
             for (final ListGroup lListGroupItem : lListGroups) {
                 lListGroupItem.setContact(null);
-                mLogger.debug("List Group : {} unlined from contact with contactECMId : {}", lListGroupItem.getGroupId(), pContactECMId);
+                mLogger.debug("List Group : {} unlinked from contact with contactECMId : {}", lListGroupItem.getGroupId(), pContactECMId);
             }
             mListGroupRepository.saveAll(lListGroups);
+        }
+    }
+
+    /**
+     * <b>dissociateOrdersFromContact</b> - It dissociates Orders from Contact
+     *
+     * @param pContact - the Contact
+     */
+    private void dissociateOrdersFromContact(final Contact pContact) {
+        final List<Order> lOrders = mOrderRepository.findAllByContactContactECMId(pContact.getContactECMId());
+        if (!CollectionUtils.isEmpty(lOrders)) {
+            for (final Order lOrder : lOrders) {
+                lOrder.setContact(null);
+                lOrder.setApproverContact(null);
+                mLogger.debug("Order : {} unlinked from contact with contactECMId : {}", lOrder.getOrderId(), pContact.getContactECMId());
+            }
+            mOrderRepository.saveAll(lOrders);
         }
     }
 }
