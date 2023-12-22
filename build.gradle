@@ -72,7 +72,7 @@ dependencies {
 }
 
 tasks.named('test') {
-    environment "CHANNEL", "CHANNEL"
+    environment "MQ_CHANNEL", "CHANNEL"
     environment "ENV", "LOCAL"
     environment "SERVER_PORT", "8581"
     environment "MQ_HOST_NAME", "HOST"
@@ -80,6 +80,7 @@ tasks.named('test') {
     environment "MQ_QUEUE_MANAGER", "QUEUE_MANAGER"
     environment "MQ_SUB_CLIENT_ID", "SUB_CLIENT_ID"
     environment "MQ_SUB_NAME", "SUB_NAME"
+    environment "MQ_TOPIC_NAME", "test"
     environment "MQ_QUEUE_NAME", "TEST.QUOTES"
     environment "MQ_USERNAME", "USERNAME"
     environment "MQ_PASSWORD", "PASSWORD"
@@ -89,5 +90,12 @@ tasks.named('test') {
     environment "EMAIL_HOST", "smtp.com"
     environment "EMAIL_PORT", "25"
     environment "EMAIL_FROM", "noreply@test.com"
+    environment "BATCH_SIZE", "5"
+	environment "EMAIL_TO", "test@winsupply.com"
+	environment "FAILURE_SECOND_THRESHOLD", "3"
+	environment "FAILURE_THIRD_THRESHOLD", "4"
+	environment "FAILURE_THRESHOLD", "2"
+	environment "SUCCESS_THRESHOLD", "3"
+	environment "TIME_DELAY", "120000"
     useJUnitPlatform()
 }
