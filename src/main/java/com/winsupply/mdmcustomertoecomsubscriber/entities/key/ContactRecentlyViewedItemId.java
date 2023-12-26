@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Contact Location Preference Id
+ * Contact Recently Viewed Item Id
  *
  * @author Ankit Jain
  */

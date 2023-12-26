@@ -81,7 +81,6 @@ tasks.named('test') {
     environment "MQ_SUB_CLIENT_ID", "SUB_CLIENT_ID"
     environment "MQ_SUB_NAME", "SUB_NAME"
     environment "MQ_TOPIC_NAME", "test"
-    environment "MQ_QUEUE_NAME", "TEST.QUOTES"
     environment "MQ_USERNAME", "USERNAME"
     environment "MQ_PASSWORD", "PASSWORD"
     environment "DC_DB_PASSWORD", "password"

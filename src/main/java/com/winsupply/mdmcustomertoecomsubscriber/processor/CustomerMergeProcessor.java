@@ -100,7 +100,7 @@ public class CustomerMergeProcessor {
      * @param pExistingCustomerECMId - the Existing Customer ECM Id
      */
     private void checkAndMoveExistingOrders(final Customer pNewCustomer, final String pExistingCustomerECMId) {
-        final List<Order> lOrders = mOrderRepository.findByCustomerCustomerECMId(pExistingCustomerECMId);
+        final List<Order> lOrders = mOrderRepository.findAllByCustomerCustomerECMId(pExistingCustomerECMId);
         if (lOrders != null && !lOrders.isEmpty()) {
             for (final Order lOrder : lOrders) {
                 lOrder.setCustomer(pNewCustomer);

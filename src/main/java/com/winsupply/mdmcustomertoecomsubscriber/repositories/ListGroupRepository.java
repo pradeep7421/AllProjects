@@ -24,7 +24,7 @@ public interface ListGroupRepository extends JpaRepository<ListGroup, Integer> {
      * it fetches the ListGroup based on contact ECM id
      *
      * @param pContactECMId - the contact ECM id
-     * @return - List<Quote>
+     * @return - List<ListGroup>
      */
     List<ListGroup> findByContactContactECMId(String pContactECMId);
 }

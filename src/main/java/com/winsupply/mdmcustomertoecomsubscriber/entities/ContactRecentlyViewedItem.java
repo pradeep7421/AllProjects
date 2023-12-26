@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * CContact Recently Viewed Item
+ * Contact Recently Viewed Item
  *
  * @author Ankit Jain
  */
@@ -22,6 +22,6 @@ public class ContactRecentlyViewedItem {
     @EmbeddedId
     private ContactRecentlyViewedItemId id;
 
-    @Column(name = "order_sequence", length = 5, nullable = false)
-    private String orderSequence;
+    @Column(name = "order_sequence", nullable = false)
+    private int orderSequence;
 }

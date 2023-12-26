@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     /**
-     * <b>findByLogin</b> - it finds the Orders based on Contact ECM Id
+     * <b>findAllByContactContactECMId</b> - it finds the Orders based on Contact ECM Id
      *
      * @param pContactECMId - the Contact ECM Id
      * @return - List<Order>
@@ -23,11 +23,18 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findAllByContactContactECMId(String pContactECMId);
 
     /**
-     * <b>findByCustomerCustomerECMId</b> - it finds the Orders based on Customer
-     * ECM Id
+     * <b>findAllByApproverContactContactECMId</b> - it finds the Orders based on Approver Contact ECM Id
+     *
+     * @param pContactECMId - the Contact ECM Id
+     * @return - List<Order>
+     */
+    List<Order> findAllByApproverContactContactECMId(String pContactECMId);
+
+    /**
+     * <b>findAllByCustomerCustomerECMId</b> - it finds the Orders based on Customer ECM Id
      *
      * @param pCustomerECMId - the Customer ECM Id
      * @return - List<Order>
      */
-    List<Order> findByCustomerCustomerECMId(String pCustomerECMId);
+    List<Order> findAllByCustomerCustomerECMId(String pCustomerECMId);
 }

@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Customer Entity
+ * Order Entity
  *
  * @author Ankit Jain
  *

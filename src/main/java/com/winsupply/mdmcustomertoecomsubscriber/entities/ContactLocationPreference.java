@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Contact Industry Preference
+ * Contact Location Preference
  *
  * @author Purushotham Reddy T
  */

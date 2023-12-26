@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * Contact Location Preference Repository
+ * Contact Recently Viewed Item Repository
  *
  * @author Ankit Jain
  *
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface ContactRecentlyViewedItemRepository extends JpaRepository<ContactRecentlyViewedItem, ContactRecentlyViewedItemId> {
 
     /**
-     * <b>deleteAllByIdContactECMId</b> - it deletes the Contact Recently Viewed Item
+     * <b>deleteAllByIdContactECMId</b> - it deletes the contact recently viewed items
      * based on Contact ECM Id
      *
      * @param pContactEcmId - the Contact ECM Id

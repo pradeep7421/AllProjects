@@ -27,7 +27,7 @@ public class ContactLocationPreferenceId implements Serializable {
     private String contactECMId;
 
     @Column(name = "company_number", length = 5, nullable = false)
-    private String companyNumbner;
+    private String companyNumber;
 
     @Column(name = "preference_name", length = 25, nullable = false)
     private String preferenceName;
@@ -41,12 +41,12 @@ public class ContactLocationPreferenceId implements Serializable {
         if (getClass() != pObj.getClass())
             return false;
         ContactLocationPreferenceId other = (ContactLocationPreferenceId) pObj;
-        return Objects.equals(companyNumbner, other.companyNumbner) && Objects.equals(contactECMId, other.contactECMId)
+        return Objects.equals(companyNumber, other.companyNumber) && Objects.equals(contactECMId, other.contactECMId)
                 && Objects.equals(preferenceName, other.preferenceName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(companyNumbner, contactECMId, preferenceName);
+        return Objects.hash(companyNumber, contactECMId, preferenceName);
     }
 }

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Contact Location Preference Id
+ * Contact Other Address Id
  *
  * @author Ankit Jain
  */
@@ -26,8 +26,8 @@ public class ContactOtherAddressId implements Serializable {
     @Column(name = "contact_ecm_id", length = 15, nullable = false)
     private String contactECMId;
 
-    @Column(name = "address_id", length = 4, nullable = false)
-    private String addressId;
+    @Column(name = "address_id", nullable = false)
+    private Integer addressId;
 
     @Override
     public boolean equals(Object obj) {

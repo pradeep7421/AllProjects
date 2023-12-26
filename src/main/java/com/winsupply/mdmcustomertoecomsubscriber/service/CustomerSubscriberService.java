@@ -318,12 +318,14 @@ public class CustomerSubscriberService {
      */
     private void sendSuccessEmail() {
         mSuccessCount++;
-        final String lFailureEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_SUBJECT), mEmailConfig.getEnvironment());
+        final String lFailureEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_SUBJECT),
+                mEmailConfig.getEnvironment());
         final String lPayloadStorageStr = mEmailService.getPayloadStorage() == null ? "" : mEmailService.getPayloadStorage().toString();
         final String lFailureEmailMessage = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_FAILURE_BODY),
                 "Failed Payload  ->  " + lPayloadStorageStr);
 
-        final String lSuccessEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_SUCCESS_SUBJECT), mEmailConfig.getEnvironment());
+        final String lSuccessEmailSubject = MessageFormat.format(mResourceBundle.getString(Constants.EMAIL_SUCCESS_SUBJECT),
+                mEmailConfig.getEnvironment());
         final String lSuccessEmailMessage = mResourceBundle.getString(Constants.EMAIL_SUCCESS_BODY);
         final boolean lIsSuccess = mEmailService.successCheck(mFailureCount, mSuccessCount, lFailureEmailMessage, lFailureEmailSubject,
                 lSuccessEmailMessage, lSuccessEmailSubject);
