@@ -65,9 +65,9 @@ public class CustomerSubscriberService {
 
     private final ContactProcessor mContactProcessor;
 
-    public EmailService mEmailService;
+    private EmailService mEmailService;
 
-    public final EmailConfig mEmailConfig;
+    private final EmailConfig mEmailConfig;
 
     private int mFailureCount;
 
