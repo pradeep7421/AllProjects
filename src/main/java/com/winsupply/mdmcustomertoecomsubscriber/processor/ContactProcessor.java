@@ -206,11 +206,11 @@ public class ContactProcessor {
         mContactEmailPreferenceRepository.deleteAllByIdContactEcmId(pContactEntity.getContactECMId());
         mContactIndustryPreferenceRepository.deleteAllByIdContactEcmId(pContactEntity.getContactECMId());
 
-        // TODO - check if cascade will take care????
-//        if (null != pContactEntity.getAddress()) {
-//            mPhoneRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
-//            mOrderEmailAddressRepository.deleteAllByAddressId(pContactEntity.getAddress().getId());
-//        }
+        final Address lAddress = pContactEntity.getAddress();
+        if (null != lAddress) {
+            mPhoneRepository.deleteAllByAddressId(lAddress.getId());
+            mOrderEmailAddressRepository.deleteAllByAddressId(lAddress.getId());
+        }
 
         createContactEmailPreferences(pContact);
         createContactIndustryPreferences(pContact);
@@ -266,12 +266,6 @@ public class ContactProcessor {
         mContactLocationPreferenceRepository.deleteAllByIdContactECMId(pContact.getContactECMId());
         mContactRecentlyViewedItemRepository.deleteAllByIdContactECMId(pContact.getContactECMId());
         mContactOtherAddressRepository.deleteAllByIdContactECMId(pContact.getContactECMId());
-
-        // TODO - check if cascade will take care????
-//        if (null != pContact.getAddress()) {
-//            mPhoneRepository.deleteAllByAddressId(pContact.getAddress().getId());
-//            mOrderEmailAddressRepository.deleteAllByAddressId(pContact.getAddress().getId());
-//        }
 
         dissociateQuotesFromContact(pContact.getContactECMId());
         dissociateListGroupsFromContact(pContact.getContactECMId());
