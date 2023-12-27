@@ -42,13 +42,16 @@ public class CustomerSubAccountProcessor {
      * @param pInActiveCustomerSubAccounts - InActive Customer SubAccount List
      * @param pCustomer                    - the Customer
      * @param pLocation                    - the Location
+     * @return - List<String> (lSubAccountCustomerNumbers)
      */
-    public void processSubAccountsData(final Account pAccount, final List<String> pInActiveCustomerSubAccounts, final Customer pCustomer,
+    public List<String> processSubAccountsData(final Account pAccount, final List<String> pInActiveCustomerSubAccounts, final Customer pCustomer,
             final Location pLocation) {
-        List<CustomerSubAccount> lCustomerSubAccounts = new ArrayList<>();
-        List<Account.SubAccount> lSubAccounts = pAccount.getWiseSubAccounts();
+        final List<String> lSubAccountCustomerNumbers = new ArrayList<>();
+        final List<CustomerSubAccount> lCustomerSubAccounts = new ArrayList<>();
+        final List<Account.SubAccount> lSubAccounts = pAccount.getWiseSubAccounts();
         for (final SubAccount lSubAccount : lSubAccounts) {
             final String lSubAccountCustomerNumber = pAccount.getCompanyNumber() + "-" + lSubAccount.getSubAccountNumber();
+            lSubAccountCustomerNumbers.add(lSubAccountCustomerNumber);
             mLogger.debug("Processing subAccount : {}", lSubAccountCustomerNumber);
             final CustomerSubAccount lCustomerSubAccount = new CustomerSubAccount();
             lCustomerSubAccount.setCustomer(pCustomer);
@@ -78,6 +81,7 @@ public class CustomerSubAccountProcessor {
             lCustomerSubAccounts.add(lCustomerSubAccount);
         }
         mCustomerSubAccountRepository.saveAll(lCustomerSubAccounts);
+        return lSubAccountCustomerNumbers;
     }
 
     /**

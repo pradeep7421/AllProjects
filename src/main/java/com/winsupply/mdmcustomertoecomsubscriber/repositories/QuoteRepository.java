@@ -14,11 +14,19 @@ import org.springframework.stereotype.Repository;
 public interface QuoteRepository extends JpaRepository<Quote, Integer> {
 
     /**
-     * it fetches the customer based on customer ECM id
+     * it fetches the Quotes based on customer ECM id
      *
      * @param pCustomerECMId - the customer ECM id
      * @return - List<Quote>
      */
     List<Quote> findByCustomerCustomerECMId(String pCustomerECMId);
+
+    /**
+     * it fetches the Quotes based on contact ECM id
+     *
+     * @param pContactECMId - the contact ECM id
+     * @return - List<Quote>
+     */
+    List<Quote> findByContactContactECMId(String pContactECMId);
 
 }

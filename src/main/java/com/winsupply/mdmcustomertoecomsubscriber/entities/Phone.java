@@ -25,7 +25,7 @@ public class Phone {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "phone_number_id", length = 4)
+    @Column(name = "phone_number_id")
     private Integer id;
 
     @Column(name = "phone_number", length = 10, nullable = false)

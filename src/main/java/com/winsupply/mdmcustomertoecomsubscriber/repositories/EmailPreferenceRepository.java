@@ -3,7 +3,6 @@ package com.winsupply.mdmcustomertoecomsubscriber.repositories;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.EmailPreference;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.query.Param;
 
 /**
  * Email Preference Repository
@@ -19,5 +18,5 @@ public interface EmailPreferenceRepository extends JpaRepository<EmailPreference
      * @param pEmailPreferenceDesc - the email preference description
      * @return - Optional<EmailPreference>
      */
-    Optional<EmailPreference> findByEmailPreferenceDescIgnoreCase(@Param("emailPreferenceDesc") String pEmailPreferenceDesc);
+    Optional<EmailPreference> findByEmailPreferenceDescIgnoreCase(String pEmailPreferenceDesc);
 }

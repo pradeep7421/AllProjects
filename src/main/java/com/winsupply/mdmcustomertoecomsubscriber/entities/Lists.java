@@ -29,7 +29,7 @@ public class Lists {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "list_id", length = 25)
+    @Column(name = "list_id")
     private Integer listId;
 
     @ManyToOne

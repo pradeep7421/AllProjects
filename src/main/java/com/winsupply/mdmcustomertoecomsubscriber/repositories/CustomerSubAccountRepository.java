@@ -35,15 +35,5 @@ public interface CustomerSubAccountRepository extends JpaRepository<CustomerSubA
      * @param pStatusId      - the Status Id
      * @return - List<CustomerSubAccount>
      */
-    List<CustomerSubAccount> findByCustomerCustomerECMIdAndStatusId(@Param("customerECMId") String pCustomerECMId,
-            @Param("statusId") Short pStatusId);
-
-    /**
-     * it returns the CustomerSubAccount based on customer ECM Id
-     *
-     * @param pCustomerECMId - the Customer ECM Id
-     * @return - List<CustomerSubAccount>
-     */
-    List<CustomerSubAccount> findByCustomerCustomerECMId(@Param("customerECMId") String pCustomerECMId);
-
+    List<CustomerSubAccount> findByCustomerCustomerECMIdAndStatusId(String pCustomerECMId, Short pStatusId);
 }

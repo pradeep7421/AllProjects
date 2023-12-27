@@ -14,9 +14,9 @@ import org.springframework.stereotype.Repository;
 public interface OrderEmailAddressRepository extends JpaRepository<OrderEmailAddress, Integer> {
 
     /**
-     * <b>deleteAllByAddressId</b> - It delete phone based on address
+     * <b>deleteAllByAddressId</b> - It deletes all order emails based on address Id
      *
      * @param pAddressId - the Address Id
      */
-    void deleteAllByAddressId(Long pAddressId);
+    void deleteAllByAddressId(Integer pAddressId);
 }

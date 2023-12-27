@@ -22,7 +22,7 @@ public class MQListener {
     /**
      * the logger
      */
-    private Logger mLogger = LogManager.getLogger(MQListener.class);
+    private final Logger mLogger = LogManager.getLogger(MQListener.class);
 
     private final CustomerSubscriberService mCustomerSubscriberService;
 

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
 public interface ContactEmailPreferenceRepository extends JpaRepository<ContactEmailPreference, ContactEmailPreferenceId> {
 
     /**
-     * <b>deleteByIdContactEcmId</b> - it deletes the Contact Email Preferences
+     * <b>deleteAllByIdContactEcmId</b> - it deletes the Contact Email Preferences
      * based on Contact ECM Id
      *
      * @param pContactEcmId - the Contact ECM Id

@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface ContactIndustryPreferenceRepository extends JpaRepository<ContactIndustryPreference, ContactIndustryPreferenceId> {
 
     /**
-     * <b>deleteByIdContactEcmId</b> - it deletes the Contact Industry Preference
+     * <b>deleteAllByIdContactEcmId</b> - it deletes the Contact Industry Preference
      * based on Contact ECM Id
      *
      * @param pContactEcmId - the Contact ECM Id

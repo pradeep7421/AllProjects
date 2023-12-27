@@ -18,5 +18,5 @@ public interface PhoneRepository extends JpaRepository<Phone, Integer> {
      *
      * @param pAddressId - the Address Id
      */
-    void deleteAllByAddressId(Long pAddressId);
+    void deleteAllByAddressId(Integer pAddressId);
 }
