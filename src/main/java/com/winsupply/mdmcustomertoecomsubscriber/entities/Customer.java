@@ -46,9 +46,6 @@ public class Customer {
     @Column(name = "phone", length = 10)
     private String phone;
 
-    @Column(name = "default_sub_account_id", length = 4)
-    private int defaultSubAccountId;
-
     @Column(name = "wincca", length = 20)
     private String wincca;
 

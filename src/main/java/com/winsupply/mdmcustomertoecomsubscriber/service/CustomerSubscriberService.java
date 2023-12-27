@@ -274,7 +274,7 @@ public class CustomerSubscriberService {
                 } else if (Constants.YES_KEY.equals(lAccountEcomStatus)) {
                     pFilteredAccountsMap.put(lLocalCompNumber, pWiseAccount);
                 }
-            } else {
+            } else if (Constants.YES_KEY.equals(lAccountEcomStatus)) {
                 pFilteredAccountsMap.put(lLocalCompNumber, pWiseAccount);
             }
         }
