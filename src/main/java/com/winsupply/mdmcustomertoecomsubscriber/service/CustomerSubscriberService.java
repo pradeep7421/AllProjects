@@ -230,7 +230,7 @@ public class CustomerSubscriberService {
             }
         }
         pCustomer.setPhone(lPhoneNumber);
-     // TODO - BLOCKED pCustomer.setFax(lFaxNumber);
+        // TODO - BLOCKED pCustomer.setFax(lFaxNumber);
     }
 
     /**
