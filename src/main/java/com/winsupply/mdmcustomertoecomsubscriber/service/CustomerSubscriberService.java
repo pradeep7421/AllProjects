@@ -271,8 +271,6 @@ public class CustomerSubscriberService {
 
                 if (Constants.YES_KEY.equals(lAccountEcomStatus) && Constants.YES_KEY.equals(lPrevAccountEcomStatus)) {
                     throw new ECMException(mResourceBundle.getString("duplicate.accountEcomStatus"));
-                } else if (Constants.YES_KEY.equals(lAccountEcomStatus)) {
-                    pFilteredAccountsMap.put(lLocalCompNumber, pWiseAccount);
                 }
             } else if (Constants.YES_KEY.equals(lAccountEcomStatus)) {
                 pFilteredAccountsMap.put(lLocalCompNumber, pWiseAccount);
