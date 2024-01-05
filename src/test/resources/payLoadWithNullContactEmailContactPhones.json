@@ -87,45 +87,8 @@
             "isPreferredContact": "Y",
             "contactDetailRowIdObject": null,
             "customerContactRelationships": [],
-            "contactEmails": [
-                {
-                    "rowidObject": "3102673       ",
-                    "emailAddress": "JKDMECHANICALINC@GMAIL.COM",
-                    "emailType": "EW",
-                    "optOutInd": "",
-                    "preferenceLevel": "Primary",
-                    "comments": "",
-                    "isPreferredContactMethod": "Y",
-                    "emailValidationDate": "2022-07-22 00:44:11",
-                    "emailStatusDescription": "Email Valid",
-                    "emailValidationStatus": "SEND"
-                },
-                {
-                    "rowidObject": "3102674       ",
-                    "emailAddress": "plbg101@aol.com",
-                    "emailType": "EW",
-                    "optOutInd": "",
-                    "preferenceLevel": "Primary",
-                    "comments": "",
-                    "isPreferredContactMethod": "N",
-                    "emailValidationDate": "2022-07-22 20:01:53",
-                    "emailStatusDescription": "Domain Confirmed",
-                    "emailValidationStatus": "SEND"
-                }
-            ],
-            "contactPhones": [
-                {
-                    "rowidObject": "6044988       ",
-                    "phoneNumber": "4848889420",
-                    "phoneExtension": "",
-                    "phoneType": "LB",
-                    "optOut": "",
-                    "doNotCall": "",
-                    "preferenceLevel": "Primary",
-                    "comments": "",
-                    "isPreferredContactMethod": "N"
-                }
-            ],
+            "contactEmails": null,
+            "contactPhones": null,
             "contactAtgAccounts": [],
             "contactAddresses": [],
             "ecommercePricingStatus": "Y",
@@ -355,9 +318,9 @@
                 "freightPercent": "0.00",
                 "freightCost": "0.00",
                 "columnNameForPricing": "",
-                "proRewardsId": "1010",
+                "proRewardsId": "",
                 "poReqCode": "N",
-                "billToAccount": "Y",
+                "billToAccount": "",
                 "wiseWinCCA": null,
                 "cashSale": "Y",
                 "customerStratification": "",

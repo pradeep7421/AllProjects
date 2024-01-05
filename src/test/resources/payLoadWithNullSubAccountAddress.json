@@ -222,38 +222,7 @@
                         "subAccountDetailSrcId": "00065:S:000339",
                         "billToSpecialPricing": ""
                     },
-                    "subAccountAddresses": [
-                        {
-                            "pkeySrcObject": "00065:S:000339:Ship to 02:",
-                            "subAccountAddressSrcId": "00065:S:000339:Ship to 02:",
-                            "subAccountSrcId": "00065:S:000339",
-                            "type": "Ship to",
-                            "preferenceLevel": "",
-                            "mailingName": "",
-                            "addressLine1": "106 W 11TH ST",
-                            "addressLine2": "",
-                            "city": "KANSAS CITY",
-                            "state": "MO",
-                            "postalCode": "64105",
-                            "postalCodeExtn": "1813",
-                            "countryCode": "US"
-                        },
-                        {
-                            "pkeySrcObject": "00065:S:000339:Ship to 01:",
-                            "subAccountAddressSrcId": "00065:S:000339:Ship to 01:",
-                            "subAccountSrcId": "00065:S:000339",
-                            "type": "Ship to",
-                            "preferenceLevel": "",
-                            "mailingName": "MARK TWAIN KANSAS CITY",
-                            "addressLine1": "80 MAPLE AVE",
-                            "addressLine2": "SUITE F",
-                            "city": "MEDIA",
-                            "state": "PA",
-                            "postalCode": "19063",
-                            "postalCodeExtn": "1449",
-                            "countryCode": "US"
-                        }
-                    ],
+                    "subAccountAddresses": null,
                     "phoneList": [
                         {
                             "pkeySrcObject": "00065:S:000339:LB-01:",
@@ -355,9 +324,9 @@
                 "freightPercent": "0.00",
                 "freightCost": "0.00",
                 "columnNameForPricing": "",
-                "proRewardsId": "1010",
+                "proRewardsId": "",
                 "poReqCode": "N",
-                "billToAccount": "Y",
+                "billToAccount": "",
                 "wiseWinCCA": null,
                 "cashSale": "Y",
                 "customerStratification": "",

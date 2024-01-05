@@ -35,19 +35,7 @@
         }
     ],
     "webAddresses": [],
-    "phones": [
-        {
-            "rowidObject": "1322693       ",
-            "phoneNumber": "4848889420",
-            "phoneExtension": "",
-            "phoneType": "LB",
-            "optOut": "",
-            "doNotCall": "",
-            "preferenceLevel": "",
-            "comments": "",
-            "isPreferredContactMethod": "N"
-        }
-    ],
+    "phones": null,
     "addresses": [
         {
             "mailingName": "MARK TWAIN KANSAS CITY",
@@ -254,20 +242,7 @@
                             "countryCode": "US"
                         }
                     ],
-                    "phoneList": [
-                        {
-                            "pkeySrcObject": "00065:S:000339:LB-01:",
-                            "rowidObject": "1363897       ",
-                            "phoneNumber": "4848889420",
-                            "phoneExtension": "",
-                            "phoneType": "LB",
-                            "optOut": "",
-                            "doNotCall": "",
-                            "preferenceLevel": "",
-                            "comments": "",
-                            "isPreferredContactMethod": ""
-                        }
-                    ],
+                    "phoneList": null,
                     "emailList": [
                         {
                             "pkeySrcObject": "00065:S:000339:EW",
@@ -305,20 +280,7 @@
                 }
             ],
             "websiteList": [],
-            "phoneList": [
-                {
-                    "pkeySrcObject": "00065:C:000321:LB-01:",
-                    "rowidObject": "1322693       ",
-                    "phoneNumber": "4848889420",
-                    "phoneExtension": "",
-                    "phoneType": "LB",
-                    "optOut": "",
-                    "doNotCall": "",
-                    "preferenceLevel": "",
-                    "comments": "",
-                    "isPreferredContactMethod": ""
-                }
-            ],
+            "phoneList": null,
             "addresses": [
                 {
                     "pkeySrcObject": "00065:C:000321:Bill to 01:",
