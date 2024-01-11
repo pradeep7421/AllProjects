@@ -1,0 +1,112 @@
+{
+	"customerEcmId": "24369121",
+	"fullName": "JKD MECHANICAL, INC",
+	"interCompanyId": "000139",
+	"accountEcommerceStatus": "Y",
+	"winCCA": "",
+	"proRewardsId": "",
+	"creditDiscountEligible": "N",
+	"statementCode": "Y",
+	"customerInvoiceCopies": 1,
+	"goPaperless": "N",
+	"vmiLocations": null,
+	"xrefDetails": [
+		{
+			"winCCA": null,
+			"customerStratification": ""
+		}
+	],
+	"federalIds": null,
+	"punchOutAccounts": [],
+	"socialMediaHandles": [],
+	"atgAccounts": null,
+	"emails": null,
+	"webAddresses": [],
+	"phones": null,
+	"addresses": [
+		{
+			"mailingName": "MARK TWAIN KANSAS CITY",
+			"addressLine1": "80 MAPLE AVE",
+			"addressLine2": "SUITE F",
+			"city": "MEDIA",
+			"state": "PA",
+			"postalCode": "19063",
+			"postalCodeExtn": "1449",
+			"countryCode": "US",
+			"type": "Bill to",
+			"preference": "Primary"
+		}
+	],
+	"contacts": [
+		{
+			"contactEcmId": "26068515",
+			"firstName": "lou",
+			"lastName": "raymond",
+			"userId": "",
+			"type": "K",
+			"jobTitle": "",
+			"role": "",
+			"contactECommerceStatus": "N",
+			"statementNotificationEnabled": "",
+			"statementNotificationSchedule": "",
+			"statementDeliverySetting": "",
+			"invoiceNotificationEnabled": "",
+			"invoiceNotificationSchedule": "",
+			"invoiceDeliverySetting": "",
+			"onlineRegistrationDate": "",
+			"tcAcceptanceDate": "",
+			"industries": "",
+			"communicationPreference": [],
+			"eCommercePricingStatus": null,
+			"eCommerceInventoryStatus": null,
+			"isPreferredContact": "Y",
+			"contactDetailRowIdObject": null,
+			"customerContactRelationships": [],
+			"contactEmails": [
+				{
+					"rowidObject": "3102673       ",
+					"emailAddress": "JKDMECHANICALINC@GMAIL.COM",
+					"emailType": "EW",
+					"optOutInd": "",
+					"preferenceLevel": "Primary",
+					"comments": "",
+					"isPreferredContactMethod": "Y",
+					"emailValidationDate": "2022-07-22 00:44:11",
+					"emailStatusDescription": "Email Valid",
+					"emailValidationStatus": "SEND"
+				},
+				{
+					"rowidObject": "3102674       ",
+					"emailAddress": "plbg101@aol.com",
+					"emailType": "EW",
+					"optOutInd": "",
+					"preferenceLevel": "Primary",
+					"comments": "",
+					"isPreferredContactMethod": "N",
+					"emailValidationDate": "2022-07-22 20:01:53",
+					"emailStatusDescription": "Domain Confirmed",
+					"emailValidationStatus": "SEND"
+				}
+			],
+			"contactPhones": [
+				{
+					"rowidObject": "6044988       ",
+					"phoneNumber": "4848889420",
+					"phoneExtension": "",
+					"phoneType": "LB",
+					"optOut": "",
+					"doNotCall": "",
+					"preferenceLevel": "Primary",
+					"comments": "",
+					"isPreferredContactMethod": "N"
+				}
+			],
+			"contactAtgAccounts": [],
+			"contactAddresses": [],
+			"ecommercePricingStatus": "Y",
+			"ecommerceInventoryStatus": "Y"
+		}
+	],
+	"wiseAccounts": null,
+	"carrAccounts": []
+}

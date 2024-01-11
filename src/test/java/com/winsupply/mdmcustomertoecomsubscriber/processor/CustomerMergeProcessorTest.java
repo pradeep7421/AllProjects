@@ -1,5 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
+import com.winsupply.common.utils.UtilityFile;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
@@ -17,7 +18,6 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListGroupRepositor
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.ListToCustomerRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
-import com.winsupply.readfile.PayLoadReadFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,16 +58,37 @@ public class CustomerMergeProcessorTest {
     CustomerAccountProcessor mCustomerAccountProcessor;
 
     @Test
-    void testMergeCustomer() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
+    void testMergeCustomer_handlingException_WhileDeleting_ExistingCustomer() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":null,\r\n"
                 + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
 
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId("243612222");
+        List<AtgAccount> lExistingCustomers = new ArrayList<>();
+        lExistingCustomers.add(lCustomerMessageVO.getAtgAccounts().get(0));
+
+        when(mCustomerRepository.findById(null)).thenReturn(Optional.of(lCustomer));
+        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(null);
+        Mockito.doNothing().when(mCustomerAccountProcessor).resetCustomerAccountsData(anyString());
+        assertThrows(Exception.class, () -> mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers));
+        verify(mCustomerRepository, times(1)).findById(null);
+        verify(mCustomerAccountProcessor, times(1)).resetCustomerAccountsData(null);
+    }
+
+    @Test
+    void testMergeCustomer() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
+                + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
+
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         String lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();
 
         Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerECMId);
+        lCustomer.setCustomerECMId("243612222");
 
         List<ListToCustomer> lListToCustomersForDelete = new ArrayList<>();
         ListToCustomer lListToCustomer = new ListToCustomer();
@@ -99,30 +120,34 @@ public class CustomerMergeProcessorTest {
         when(mContactRepository.saveAll(anyList())).thenReturn(lContacts);
         when(mQuoteRepository.findByCustomerCustomerECMId(lCustomerECMId)).thenReturn(lQuotes);
         when(mQuoteRepository.saveAll(anyList())).thenReturn(lQuotes);
+        when(mListToCustomerRepository.findByIdCustomerECMId(anyString())).thenReturn(lListToCustomersForDelete);
         Mockito.doNothing().when(mListToCustomerRepository).deleteAll(anyList());
         when(mListToCustomerRepository.saveAll(anyList())).thenReturn(lListToCustomersForDelete);
-        when(mListGroupRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lListGroups);
-        when(mListGroupRepository.saveAll(anyList())).thenReturn(lListGroups);
-        when(mListToCustomerRepository.findByIdCustomerECMId(anyString())).thenReturn(lListToCustomersForDelete);
         when(mOrderRepository.findAllByCustomerCustomerECMId(lCustomerECMId)).thenReturn(lOrders);
         when(mOrderRepository.saveAll(anyList())).thenReturn(lOrders);
+        when(mListGroupRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lListGroups);
+        when(mListGroupRepository.saveAll(anyList())).thenReturn(lListGroups);
         Mockito.doNothing().when(mCustomerRepository).deleteById(anyString());
 
         mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers);
+        verify(mCustomerAccountProcessor, times(1)).resetCustomerAccountsData(anyString());
+        verify(mCustomerRepository, times(1)).deleteById(anyString());
+        verify(mListGroupRepository, times(1)).findByCustomerCustomerECMId(anyString());
+        verify(mListGroupRepository, times(1)).saveAll(anyList());
         verify(mCustomerRepository, times(1)).deleteById(anyString());
     }
 
     @Test
     void testMergeCustomer_WithEmpty_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
                 + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
 
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         String lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();
 
         Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerECMId);
+        lCustomer.setCustomerECMId("243612222");
         List<AtgAccount> lExistingCustomers = new ArrayList<>();
         lExistingCustomers.add(lCustomerMessageVO.getAtgAccounts().get(0));
 
@@ -143,20 +168,23 @@ public class CustomerMergeProcessorTest {
         Mockito.doNothing().when(mCustomerRepository).deleteById(anyString());
 
         mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers);
+        verify(mCustomerAccountProcessor, times(1)).resetCustomerAccountsData(anyString());
+        verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
+        verify(mOrderRepository, times(1)).findAllByCustomerCustomerECMId(anyString());
         verify(mCustomerRepository, times(1)).deleteById(anyString());
     }
 
     @Test
     void testMergeCustomer_WithNull_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
                 + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
 
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         String lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();
 
         Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerECMId);
+        lCustomer.setCustomerECMId("243612222");
         List<AtgAccount> lExistingCustomers = new ArrayList<>();
         lExistingCustomers.add(lCustomerMessageVO.getAtgAccounts().get(0));
 
@@ -177,40 +205,9 @@ public class CustomerMergeProcessorTest {
         Mockito.doNothing().when(mCustomerRepository).deleteById(anyString());
 
         mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers);
+        verify(mCustomerAccountProcessor, times(1)).resetCustomerAccountsData(anyString());
+        verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
+        verify(mOrderRepository, times(1)).findAllByCustomerCustomerECMId(anyString());
         verify(mCustomerRepository, times(1)).deleteById(anyString());
     }
-
-    @Test
-    void testMergeCustomer_handlingException() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
-                + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
-
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-        String lCustomerECMId = null;
-
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerECMId);
-        List<AtgAccount> lExistingCustomers = new ArrayList<>();
-        lExistingCustomers.add(lCustomerMessageVO.getAtgAccounts().get(0));
-
-        List<Contact> lContacts = new ArrayList<>();
-        List<Quote> lQuotes = null;
-        List<ListGroup> lListGroups = null;
-        List<ListToCustomer> lListToCustomersForDelete = null;
-        List<Order> lOrders = null;
-
-        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.of(lCustomer));
-        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
-        Mockito.doNothing().when(mCustomerAccountProcessor).resetCustomerAccountsData(anyString());
-        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
-        when(mQuoteRepository.findByCustomerCustomerECMId(lCustomerECMId)).thenReturn(lQuotes);
-        when(mListGroupRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lListGroups);
-        when(mListToCustomerRepository.findByIdCustomerECMId(anyString())).thenReturn(lListToCustomersForDelete);
-        when(mOrderRepository.findAllByCustomerCustomerECMId(lCustomerECMId)).thenReturn(lOrders);
-        Mockito.doNothing().when(mCustomerRepository).deleteById(anyString());
-        assertThrows(Exception.class, () -> mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers));
-        verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-    }
-
 }

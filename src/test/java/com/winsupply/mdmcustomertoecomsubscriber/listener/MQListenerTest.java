@@ -1,10 +1,8 @@
 package com.winsupply.mdmcustomertoecomsubscriber.listener;
 
+import com.winsupply.common.utils.MessageHeadersCall;
+import com.winsupply.common.utils.UtilityFile;
 import com.winsupply.mdmcustomertoecomsubscriber.service.CustomerSubscriberService;
-import com.winsupply.readfile.PayLoadReadFile;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,24 +17,21 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class MQListenerTest {
+class MQListenerTest {
     @InjectMocks
-    MQListener mMQListener;
+    private MQListener mMQListener;
 
     @Mock
-    CustomerSubscriberService mCustomerSubscriberService;
+    private CustomerSubscriberService mCustomerSubscriberService;
 
     @Test
-    void receiveEcomCustomerMdmMsgTest() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
+    void testReceiveEcomCustomerMdmMsg() {
+        String lReadFileUtilityPayload = UtilityFile.readFile("customerPayload.json");
 
-        String lActionCode = "not_delete";
-        Map<String, Object> lHeaders = new HashMap<>();
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders lMessageHeaders = new MessageHeaders(lHeaders);
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
 
-        Mockito.doNothing().when(mCustomerSubscriberService).processCustomerMessage(lPayLoad, lMessageHeaders);
-        Message lMessage = new GenericMessage<String>(lPayLoad, lMessageHeaders);
+        Mockito.doNothing().when(mCustomerSubscriberService).processCustomerMessage(lReadFileUtilityPayload, lMessageHeaders);
+        Message<?> lMessage = new GenericMessage<>(lReadFileUtilityPayload, lMessageHeaders);
         mMQListener.receiveEcomCustomerMdmMsg(lMessage);
         verify(mCustomerSubscriberService, times(1)).processCustomerMessage((String) lMessage.getPayload(), lMessage.getHeaders());
     }

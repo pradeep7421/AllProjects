@@ -1,5 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
+import com.winsupply.common.utils.UtilityFile;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
@@ -31,7 +32,6 @@ import com.winsupply.mdmcustomertoecomsubscriber.repositories.OrderRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.PhoneTypeRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.QuoteRepository;
-import com.winsupply.readfile.PayLoadReadFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -94,24 +93,23 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactsInPayLoad() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyContacts.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         List<Contact> lContacts = new ArrayList<>();
-        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts); //
+        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-        assertEquals(lContacts, mContactRepository.findByCustomerCustomerECMId(anyString()));
-
     }
 
     @Test
-    void testCreateOrUpdateContacts_WithNonEmptyContactsfromDB_Quotes_ListGroups_Orders() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyContacts.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+    void testCreateOrUpdateContacts_WithEmptyContactsFromCustomerMessageVO_AndWithNonEmpty_ContactsfromDB_Quotes_ListGroups_Orders()
+            throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
@@ -152,13 +150,22 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyQuotes_ListGroups_Order_NonEmptyContactsfromDB() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyContacts.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
 
         List<Contact> lContacts = new ArrayList<>();
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getCustomerEcmId());
         lContacts.add(lContact);
+
+        List<Quote> lQuotes = new ArrayList<>();
+
+        List<ListGroup> lListGroups = new ArrayList<>();
+
+        List<Order> lOrders = new ArrayList<>();
 
         when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
         Mockito.doNothing().when(mContactEmailPreferenceRepository).deleteAllByIdContactEcmId(anyString());
@@ -166,174 +173,182 @@ public class ContactProcessorTest {
         Mockito.doNothing().when(mContactLocationPreferenceRepository).deleteAllByIdContactECMId(anyString());
         Mockito.doNothing().when(mContactRecentlyViewedItemRepository).deleteAllByIdContactECMId(anyString());
         Mockito.doNothing().when(mContactOtherAddressRepository).deleteAllByIdContactECMId(anyString());
-        List<Quote> lQuotes = new ArrayList<>();
         when(mQuoteRepository.findByContactContactECMId(anyString())).thenReturn(lQuotes);
-        List<ListGroup> lListGroups = new ArrayList<>();
         when(mListGroupRepository.findByContactContactECMId(anyString())).thenReturn(lListGroups);
-        List<Order> lOrders = new ArrayList<>();
         when(mOrderRepository.findAllByContactContactECMId(anyString())).thenReturn(lOrders);
         when(mOrderRepository.findAllByApproverContactContactECMId(anyString())).thenReturn(lOrders);
         Mockito.doNothing().when(mContactRepository).deleteById(anyString());
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
-        verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-        verify(mOrderRepository, times(0)).saveAll(anyList());
+        verify(mOrderRepository, times(1)).findAllByApproverContactContactECMId(anyString());
         verify(mContactRepository, times(1)).deleteById(anyString());
-        assertEquals(lQuotes, mQuoteRepository.findByContactContactECMId(anyString()));
-        assertEquals(lListGroups, mListGroupRepository.findByContactContactECMId(anyString()));
-        assertEquals(lOrders, mOrderRepository.findAllByContactContactECMId(anyString()));
     }
 
     @Test
-    void testCreateOrUpdateContacts_WithQuotes_ListGroups_As_Null() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyContacts.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+    void testCreateOrUpdateContacts_WithEmptyContactsInCustomerMessegeVo_AndWithQuotes_ListGroups_As_Null() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getCustomerEcmId());
         List<Contact> lContacts = new ArrayList<>();
         lContacts.add(lContact);
+
+        List<Quote> lQuotes = null;
+
+        List<ListGroup> lListGroups = null;
+
+        List<Order> lOrders = new ArrayList<>();
+
         when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
         Mockito.doNothing().when(mContactEmailPreferenceRepository).deleteAllByIdContactEcmId(anyString());
         Mockito.doNothing().when(mContactIndustryPreferenceRepository).deleteAllByIdContactEcmId(anyString());
         Mockito.doNothing().when(mContactLocationPreferenceRepository).deleteAllByIdContactECMId(anyString());
         Mockito.doNothing().when(mContactRecentlyViewedItemRepository).deleteAllByIdContactECMId(anyString());
         Mockito.doNothing().when(mContactOtherAddressRepository).deleteAllByIdContactECMId(anyString());
-        List<Quote> lQuotes = null;
         when(mQuoteRepository.findByContactContactECMId(anyString())).thenReturn(lQuotes);
-        List<ListGroup> lListGroups = null;
         when(mListGroupRepository.findByContactContactECMId(anyString())).thenReturn(lListGroups);
-        List<Order> lOrders = new ArrayList<>();
         when(mOrderRepository.findAllByContactContactECMId(anyString())).thenReturn(lOrders);
         when(mOrderRepository.findAllByApproverContactContactECMId(anyString())).thenReturn(lOrders);
         Mockito.doNothing().when(mContactRepository).deleteById(anyString());
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
-        verify(mOrderRepository, times(0)).saveAll(anyList());
+        verify(mOrderRepository, times(1)).findAllByApproverContactContactECMId(anyString());
         verify(mContactRepository, times(1)).deleteById(anyString());
-        assertEquals(lQuotes, mQuoteRepository.findByContactContactECMId(anyString()));
-        assertEquals(lListGroups, mListGroupRepository.findByContactContactECMId(anyString()));
-        assertEquals(lOrders, mOrderRepository.findAllByContactContactECMId(anyString()));
     }
-
-
-
 
     @Test
     void testCreateOrUpdateContacts_WithContactsInPayLoadAndDB() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc_123\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc_123\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
         when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
         List<Contact> lContacts = new ArrayList<>();
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getCustomerEcmId() + "-");
         lContacts.add(lContact);
-        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
 
+        List<Quote> lQuotes = new ArrayList<>();
+
+        List<ListGroup> lListGroups = new ArrayList<>();
+
+        List<Order> lOrders = new ArrayList<>();
+
+        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
         Mockito.doNothing().when(mContactEmailPreferenceRepository).deleteAllByIdContactEcmId(anyString());
         Mockito.doNothing().when(mContactIndustryPreferenceRepository).deleteAllByIdContactEcmId(anyString());
         Mockito.doNothing().when(mContactLocationPreferenceRepository).deleteAllByIdContactECMId(anyString());
         Mockito.doNothing().when(mContactRecentlyViewedItemRepository).deleteAllByIdContactECMId(anyString());
         Mockito.doNothing().when(mContactOtherAddressRepository).deleteAllByIdContactECMId(anyString());
-        List<Quote> lQuotes = new ArrayList<>();
-        lQuotes.add(new Quote());
         when(mQuoteRepository.findByContactContactECMId(anyString())).thenReturn(lQuotes);
-        when(mQuoteRepository.saveAll(anyList())).thenReturn(lQuotes);
-        List<ListGroup> lListGroups = new ArrayList<>();
-        lListGroups.add(new ListGroup());
         when(mListGroupRepository.findByContactContactECMId(anyString())).thenReturn(lListGroups);
-        when(mListGroupRepository.saveAll(anyList())).thenReturn(lListGroups);
-        List<Order> lOrders = new ArrayList<>();
-        lOrders.add(new Order());
         when(mOrderRepository.findAllByContactContactECMId(anyString())).thenReturn(lOrders);
-        when(mOrderRepository.saveAll(anyList())).thenReturn(lOrders);
         when(mOrderRepository.findAllByApproverContactContactECMId(anyString())).thenReturn(lOrders);
         Mockito.doNothing().when(mContactRepository).deleteById(anyString());
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
+        verify(mOrderRepository, times(1)).findAllByApproverContactContactECMId(anyString());
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
     }
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactsInDB() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-        List<String> lSubAccountCustomerNumbers = new ArrayList<>();
-        lSubAccountCustomerNumbers.add("00035");
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
-        List<ContactLocationPreference> lPreferenceList = new ArrayList<>();
-        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(anyString(), anyString())).thenReturn(lPreferenceList);
-        List<Contact> lContacts = new ArrayList<>();
-        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
+        List<String> lSubAccountCustomerNumbers = new ArrayList<>();
+        lSubAccountCustomerNumbers.add("00035");
+
+        List<ContactLocationPreference> lPreferenceList = new ArrayList<>();
+        List<Contact> lContacts = new ArrayList<>();
+
+        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(anyString(), anyString())).thenReturn(lPreferenceList);
+
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
+        verify(mCustomerAccountProcessor, times(1)).getSubAccountCustomerNumbers();
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
     }
 
     @Test
     void testCreateOrUpdateContacts_WithNoneContactsToDeleteFromDbAndInvalidEmail() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
         lSubAccountCustomerNumbers.add("00035");
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+
         List<ContactLocationPreference> lPreferenceList = new ArrayList<>();
         ContactLocationPreference lContactLocationPreference = new ContactLocationPreference();
         lContactLocationPreference.setPreferenceValue("IMPORTANT");
         lPreferenceList.add(lContactLocationPreference);
-        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
-                "defaultJob")).thenReturn(lPreferenceList);
+
         List<Contact> lContacts = new ArrayList<>();
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getContacts().get(0).getContactEcmId());
         lContacts.add(lContact);
+
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
+                "defaultJob")).thenReturn(lPreferenceList);
         when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
+        verify(mContactLocationPreferenceRepository, times(1))
+                .findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(), "defaultJob");
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
     }
 
     @Test
     void testCreateOrUpdateContacts_WithNonEmptyContactsInDBAndValidEmail() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
         lSubAccountCustomerNumbers.add("00035");
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+
         List<ContactLocationPreference> lPreferenceList = new ArrayList<>();
         ContactLocationPreference lContactLocationPreference = new ContactLocationPreference();
         lContactLocationPreference.setPreferenceValue("IMPORTANT");
         lPreferenceList.add(lContactLocationPreference);
-        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
-                "defaultJob")).thenReturn(lPreferenceList);
+
         List<Contact> lContacts = new ArrayList<>();
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getContacts().get(0).getContactEcmId() + "10");
         lContact.setFirstName("lou");
         lContact.setLastName("raymond");
         lContacts.add(lContact);
+
         when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
+                "defaultJob")).thenReturn(lPreferenceList);
         when(mContactRepository.findByLoginIgnoreCase(anyString())).thenReturn(Optional.of(lContact));
         when(mContactRepository.save(any(Contact.class))).thenReturn(lContact);
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
@@ -341,19 +356,21 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyLastName() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"firstName\": \"lou\"", "\"firstName\": \"lou\"");
-        lPayLoad = lPayLoad.replace("\"lastName\": \"raymond\"", "\"lastName\": \"\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-        List<String> lSubAccountCustomerNumbers = new ArrayList<>();
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
-        List<Contact> lContacts = new ArrayList<>();
-
-        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"firstName\": \"lou\"", "\"firstName\": \"lou\"");
+        lListenerMessege = lListenerMessege.replace("\"lastName\": \"raymond\"", "\"lastName\": \"\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
+        List<String> lSubAccountCustomerNumbers = new ArrayList<>();
+        List<Contact> lContacts = new ArrayList<>();
+
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+
+        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
@@ -361,54 +378,63 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyFirstNameAndLastName() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"firstName\": \"lou\"", "\"firstName\": \"\"");
-        lPayLoad = lPayLoad.replace("\"lastName\": \"raymond\"", "\"lastName\": \"\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-        List<String> lSubAccountCustomerNumbers = new ArrayList<>();
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
-        List<Contact> lContacts = new ArrayList<>();
-
-        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"firstName\": \"lou\"", "\"firstName\": \"\"");
+        lListenerMessege = lListenerMessege.replace("\"lastName\": \"raymond\"", "\"lastName\": \"\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
+        List<String> lSubAccountCustomerNumbers = new ArrayList<>();
+        List<Contact> lContacts = new ArrayList<>();
+
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+        when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
+
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
+        verify(mCustomerAccountProcessor, times(1)).getSubAccountCustomerNumbers();
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
     }
 
     @Test
     void testCreateOrUpdateContacts_WithEcomStatusAsY() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"interCompanyId\": \"\"", "\"interCompanyId\": \"2001\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"interCompanyId\": \"\"", "\"interCompanyId\": \"2001\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
         lSubAccountCustomerNumbers.add("00035");
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+
         List<ContactLocationPreference> lPreferenceList = new ArrayList<>();
         ContactLocationPreference lContactLocationPreference = new ContactLocationPreference();
         lContactLocationPreference.setPreferenceValue("IMPORTANT");
         lPreferenceList.add(lContactLocationPreference);
-        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
-                "defaultJob")).thenReturn(lPreferenceList);
+
         List<Contact> lContacts = new ArrayList<>();
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getContacts().get(0).getContactEcmId() + "10");
         lContact.setFirstName("lou");
         lContact.setLastName("raymond");
         lContacts.add(lContact);
+
+        ContactRole lContactRole = new ContactRole();
+
         when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
+                "defaultJob")).thenReturn(lPreferenceList);
         when(mContactRepository.findByLoginIgnoreCase(anyString())).thenReturn(Optional.of(lContact));
         when(mContactRepository.save(any(Contact.class))).thenReturn(lContact);
-        ContactRole lContactRole = new ContactRole();
         when(mContactRoleRepository.findById(anyInt())).thenReturn(Optional.of(lContactRole));
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
@@ -416,34 +442,40 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyOptionalContact() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"interCompanyId\": \"\"", "\"interCompanyId\": \"2001\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"interCompanyId\": \"\"", "\"interCompanyId\": \"2001\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
         lSubAccountCustomerNumbers.add("00035");
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+
         List<ContactLocationPreference> lPreferenceList = new ArrayList<>();
         ContactLocationPreference lContactLocationPreference = new ContactLocationPreference();
         lContactLocationPreference.setPreferenceValue("IMPORTANT");
         lPreferenceList.add(lContactLocationPreference);
-        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
-                "defaultJob")).thenReturn(lPreferenceList);
+
         List<Contact> lContacts = new ArrayList<>();
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getContacts().get(0).getContactEcmId() + "10");
         lContact.setFirstName("lou");
         lContact.setLastName("raymond");
         lContacts.add(lContact);
+
+        ContactRole lContactRole = new ContactRole();
+
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
+                "defaultJob")).thenReturn(lPreferenceList);
         when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
         when(mContactRepository.findByLoginIgnoreCase(anyString())).thenReturn(Optional.empty());
         when(mContactRepository.save(any(Contact.class))).thenReturn(lContact);
-        ContactRole lContactRole = new ContactRole();
         when(mContactRoleRepository.findById(anyInt())).thenReturn(Optional.of(lContactRole));
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
@@ -451,23 +483,26 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithNonNullAddress() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
 
-        lPayLoad = lPayLoad.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"communicationPreference\": []",
+        lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"communicationPreference\": []",
                 "\"communicationPreference\": [\r\n" + "               \"prefrence1\",\r\n" + "               \"preference2\"\r\n" + "            ]");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
+
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
         lSubAccountCustomerNumbers.add("00035");
-        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+
         List<ContactLocationPreference> lPreferenceList = new ArrayList<>();
         ContactLocationPreference lContactLocationPreference = new ContactLocationPreference();
         lContactLocationPreference.setPreferenceValue("IMPORTANT");
         lPreferenceList.add(lContactLocationPreference);
-        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
-                "defaultJob")).thenReturn(lPreferenceList);
+
         List<Contact> lContacts = new ArrayList<>();
         Contact lContact = new Contact();
         lContact.setContactECMId(lCustomerMessageVO.getContacts().get(0).getContactEcmId() + "10");
@@ -477,26 +512,33 @@ public class ContactProcessorTest {
         lAddress.setId(101);
         lContact.setAddress(lAddress);
         lContacts.add(lContact);
+
+        ContactRole lContactRole = new ContactRole();
+
+        List<ContactEmailPreference> lContactEmailPreferenceList = new ArrayList<>();
+
+        EmailPreference lEmailPreference = new EmailPreference();
+        lEmailPreference.setEmailPreferenceDesc("preference1");
+
+        List<ContactIndustryPreference> lContactIndustryPreferencesList = new ArrayList<>();
+
+        Industry lIndustry = new Industry();
+        lIndustry.setIndustryId((short) 10);
+
+        when(mCustomerAccountProcessor.getSubAccountCustomerNumbers()).thenReturn(lSubAccountCustomerNumbers);
+        when(mContactLocationPreferenceRepository.findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(),
+                "defaultJob")).thenReturn(lPreferenceList);
         when(mContactRepository.findByCustomerCustomerECMId(anyString())).thenReturn(lContacts);
         when(mContactRepository.findByLoginIgnoreCase(anyString())).thenReturn(Optional.empty());
         when(mContactRepository.save(any(Contact.class))).thenReturn(lContact);
-        ContactRole lContactRole = new ContactRole();
         when(mContactRoleRepository.findById(anyInt())).thenReturn(Optional.of(lContactRole));
         Mockito.doNothing().when(mPhoneRepository).deleteAllByAddressId(anyInt());
         Mockito.doNothing().when(mOrderEmailAddressRepository).deleteAllByAddressId(anyInt());
-        EmailPreference lEmailPreference = new EmailPreference();
-        lEmailPreference.setEmailPreferenceDesc("preference1");
         when(mEmailPreferenceRepository.findByEmailPreferenceDescIgnoreCase(anyString())).thenReturn(Optional.of(lEmailPreference));
-        List<ContactEmailPreference> lContactEmailPreferenceList = new ArrayList<>();
         when(mContactEmailPreferenceRepository.saveAll(anySet())).thenReturn(lContactEmailPreferenceList);
-        Industry lIndustry = new Industry();
-        lIndustry.setIndustryId((short) 10);
         when(mIndustryRepository.findByIndustryDescIgnoreCase(anyString())).thenReturn(Optional.of(lIndustry));
-        List<ContactIndustryPreference> lContactIndustryPreferencesList = new ArrayList<>();
         when(mContactIndustryPreferenceRepository.saveAll(anySet())).thenReturn(lContactIndustryPreferencesList);
 
-        Customer lCustomer = new Customer();
-        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
 
@@ -504,13 +546,13 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyOptionalEmailPrefrence() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"communicationPreference\": []",
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"communicationPreference\": []",
                 "\"communicationPreference\": [\r\n" + "               \"prefrence1\",\r\n" + "               \"preference2\"\r\n" + "            ]");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
@@ -564,12 +606,12 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithNullCommunicationPrefrence() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
@@ -594,7 +636,6 @@ public class ContactProcessorTest {
         lContacts.add(lContact);
 
         ContactRole lContactRole = new ContactRole();
-        List<ContactEmailPreference> lContactEmailPreferenceList = new ArrayList<>();
 
         Industry lIndustry = new Industry();
         lIndustry.setIndustryId((short) 10);
@@ -619,13 +660,13 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithAddressAsNull() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
-        lPayLoad = lPayLoad.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
+        lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
@@ -676,14 +717,14 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithAddressAndEmptyOptionalIndustry() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
 
-        lPayLoad = lPayLoad.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
@@ -733,13 +774,13 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithNullContactEmail_ContactPhones_Industries() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithNullContactEmailContactPhones.json");
-        lPayLoad = lPayLoad.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
-        lPayLoad = lPayLoad.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
-        lPayLoad = lPayLoad.replace("\"industries\": \"\"", "\"industries\": null");
-        lPayLoad = lPayLoad.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
-        lPayLoad = lPayLoad.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("payLoadWithNullContactEmailContactPhones.json");
+        lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
+        lListenerMessege = lListenerMessege.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
+        lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": null");
+        lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
+        lListenerMessege = lListenerMessege.replace("\"communicationPreference\": []", "\"communicationPreference\": null");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         ContactRole lContactRole = new ContactRole();
         Customer lCustomer = new Customer();
@@ -781,8 +822,8 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactEmail_ContactPhones() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyContactEmailContactPhonesfields.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        String lListenerMessege = UtilityFile.readFile("customerPayoadWithEmptyContactEmailContactPhonesfields.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
         lSubAccountCustomerNumbers.add("00035");

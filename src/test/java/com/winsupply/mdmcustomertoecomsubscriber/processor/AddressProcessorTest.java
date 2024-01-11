@@ -1,12 +1,12 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
+import com.winsupply.common.utils.UtilityFile;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO;
 import com.winsupply.mdmcustomertoecomsubscriber.models.CustomerMessageVO.AddressVO;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.AddressRepository;
-import com.winsupply.readfile.PayLoadReadFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,25 +29,10 @@ public class AddressProcessorTest {
     AddressRepository mAddressRepository;
 
     @Test
-    void testImportAddressesDataWithNullAddressVo() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithNullSubAccountAddress.json");
+    void testImportAddressesData_WithNullAddressesVo() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayLoadWithNullAddressesVo.json");
 
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-
-        Customer lCustomer = new Customer();
-        List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
-        List<Address> lAddresses = new ArrayList<>();
-        Address lAddress = new Address();
-        lAddresses.add(lAddress);
-
-        mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
-    }
-
-    @Test
-    void testImportAddressesDataWithEmptyAddressVo() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithNullSubAccountAddress.json");
-        lPayLoad = lPayLoad.replace("\"subAccountAddresses\": null", "\"subAccountAddresses\": []");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
@@ -56,12 +41,29 @@ public class AddressProcessorTest {
         lAddresses.add(lAddress);
 
         mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
+        verify(mAddressRepository, times(0)).save(any(Address.class));
     }
 
     @Test
-    void testImportAddressesData() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+    void testImportAddressesData_WithEmptyAddressesVo() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayLoadWithNullAddressesVo.json");
+        lListenerMessege = lListenerMessege.replace("\"subAccountAddresses\": null", "\"subAccountAddresses\": []");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
+        List<Address> lAddresses = new ArrayList<>();
+        Address lAddress = new Address();
+        lAddresses.add(lAddress);
+
+        mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
+        verify(mAddressRepository, times(0)).save(any(Address.class));
+    }
+
+    @Test
+    void testImportAddressesData_WithNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
         List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
@@ -71,26 +73,39 @@ public class AddressProcessorTest {
         when(mAddressRepository.save(any(Address.class))).thenReturn(lAddresses.get(0));
 
         mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
+        verify(mAddressRepository, times(2)).save(any(Address.class));
     }
 
     @Test
-    void testImportAddressesData_WithSubAccAdddressAndEmptyAddressVo() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithAddressVOAndEmptySubAccountAddress.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+    void testImportAddressesData_WithNonNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
+
+        List<Address> lAddresses = new ArrayList<>();
 
         Customer lCustomer = new Customer();
-        List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
-        List<Address> lAddresses = new ArrayList<>();
-        Address lAddress = new Address();
-        lAddresses.add(lAddress);
+        Address lShippingAddress = new Address();
+        lShippingAddress.setId(101);
+        Address lBillingAddress = new Address();
+        lShippingAddress.setId(102);
+        lCustomer.setDefaultShippingAddress(lShippingAddress);
+        lCustomer.setDefaultBillingAddress(lBillingAddress);
+        lAddresses.add(lShippingAddress);
+        lAddresses.add(lBillingAddress);
+
+        when(mAddressRepository.save(any(Address.class))).thenReturn(lAddresses.get(0));
 
         mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
+        verify(mAddressRepository, times(2)).save(any(Address.class));
     }
 
     @Test
-    void testImportAddressesData_WithNonNullAddress() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+    void testImportAddressesData_WithEmpty_ShipTo_ForSetBillingAddress() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"\"");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         List<Address> lAddresses = new ArrayList<>();
         Address lAddress = new Address();
         lAddress.setId(101);
@@ -106,10 +121,9 @@ public class AddressProcessorTest {
     }
 
     @Test
-    void testImportAddressesData_WithTypeEmptyInAddressVo() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"type\": \"Ship to\"", "\"type\": \"\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+    void testImportAddressesData_WithTypeEmptyAddressVo_InAddressesVoList() throws IOException {
+        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyAddressVoObjectWithNullValues.json");
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         List<Address> lAddresses = new ArrayList<>();
         Address lAddress = new Address();
         lAddress.setId(101);
@@ -120,61 +134,5 @@ public class AddressProcessorTest {
 
         mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
         verify(mAddressRepository, times(0)).save(any(Address.class));
-    }
-
-    @Test
-    void testImportAddressesData_WithTypeBillToInAddressVo() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"type\": \"Ship to\"", "\"type\": \"Bill To\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-        List<Address> lAddresses = new ArrayList<>();
-        Address lAddress = new Address();
-        lAddress.setId(101);
-        lAddresses.add(lAddress);
-        Customer lCustomer = new Customer();
-        lCustomer.setDefaultShippingAddress(lAddress);
-        List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
-
-        when(mAddressRepository.save(any(Address.class))).thenReturn(lAddresses.get(0));
-
-        mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
-        verify(mAddressRepository, times(1)).save(any(Address.class));
-    }
-
-    @Test
-    void testImportAddressesData_WithNonNullBillingAddress() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoad.json");
-        lPayLoad = lPayLoad.replace("\"type\": \"Ship to\"", "\"type\": \"Bill To\"");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-        List<Address> lAddresses = new ArrayList<>();
-        Address lAddress = new Address();
-        lAddress.setId(101);
-        lAddresses.add(lAddress);
-        Customer lCustomer = new Customer();
-        lCustomer.setDefaultShippingAddress(lAddress);
-        List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
-
-        when(mAddressRepository.save(any(Address.class))).thenReturn(lAddresses.get(0));
-
-        mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
-        verify(mAddressRepository, times(1)).save(any(Address.class));
-    }
-
-    @Test
-    void testImportAddressesData_WithTypeBillToAndShipTo() throws IOException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithTypeShipToAndBillTo.json");
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-        List<Address> lAddresses = new ArrayList<>();
-        Address lAddress = new Address();
-        lAddress.setId(101);
-        lAddresses.add(lAddress);
-        Customer lCustomer = new Customer();
-        lCustomer.setDefaultBillingAddress(lAddress);
-        List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
-
-        when(mAddressRepository.save(any(Address.class))).thenReturn(lAddresses.get(0));
-
-        mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
-        verify(mAddressRepository, times(2)).save(any(Address.class));
     }
 }

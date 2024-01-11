@@ -1,6 +1,8 @@
 package com.winsupply.mdmcustomertoecomsubscriber.service;
 
 import com.win.email.service.EmailService;
+import com.winsupply.common.utils.MessageHeadersCall;
+import com.winsupply.common.utils.UtilityFile;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.config.EmailConfig;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
@@ -13,12 +15,9 @@ import com.winsupply.mdmcustomertoecomsubscriber.processor.CustomerAccountProces
 import com.winsupply.mdmcustomertoecomsubscriber.processor.CustomerMergeProcessor;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerRepository;
 import com.winsupply.mdmcustomertoecomsubscriber.repositories.CustomerResupplyRepository;
-import com.winsupply.readfile.PayLoadReadFile;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.TimerTask;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,28 +42,34 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CustomerSubscriberServiceTest {
     @InjectMocks
-    CustomerSubscriberService mCustomerSubscriberService;
+    private CustomerSubscriberService mCustomerSubscriberService;
 
     @Mock
-    CustomerRepository mCustomerRepository;
+    private CustomerRepository mCustomerRepository;
 
     @Mock
-    CustomerResupplyRepository mCustomerResupplyRepository;
+    private CustomerResupplyRepository mCustomerResupplyRepository;
 
     @Mock
-    MessageHeaders mMessageHeaders;
+    private MessageHeaders lMessageHeaders;
+
     @Mock
-    CustomerMergeProcessor mCustomerMergeProcessor;
+    private CustomerMergeProcessor mCustomerMergeProcessor;
+
     @Mock
-    CustomerAccountProcessor mCustomerAccountProcessor;
+    private CustomerAccountProcessor mCustomerAccountProcessor;
+
     @Mock
-    AddressProcessor mAddressProcessor;
+    private AddressProcessor mAddressProcessor;
+
     @Mock
-    EmailConfig mEmailConfig;
+    private EmailConfig mEmailConfig;
+
     @Mock
-    EmailService mEmailService;
+    private EmailService mEmailService;
+
     @Mock
-    TimerTask mTimerTask;
+    private TimerTask mTimerTask;
 
     @Mock
     ContactProcessor mContactProcessor;
@@ -84,6 +89,7 @@ class CustomerSubscriberServiceTest {
         mCustomerSubscriberService.initialize();
         verify(mEmailConfig, times(1)).getBatchSize();
         verify(mEmailConfig, times(2)).getTimePeriod();
+        verify(mEmailService, times(0)).initializeTimerTask();
     }
 
     @BeforeEach
@@ -92,324 +98,216 @@ class CustomerSubscriberServiceTest {
     }
 
     @Test
-    void testProcessCustomerMessage() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadModified.json");
+    void testProcessCustomerMessage_HandlingException_WithInvalidPayload() {
+        String lListenerMessege = UtilityFile.readFile("customerPayload_Invalid.json");
+        lListenerMessege = lListenerMessege.replace("\"accountEcommerceStatus\": \"N\"", "\"accountEcommerceStatus\": \"Y\"");
 
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
 
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
+        Mockito.doNothing().when(mEmailService).setEmailSubject(anyString());
+        Mockito.doNothing().when(mEmailService).setEmailBody(anyString());
+        Mockito.doNothing().when(mEmailService).failureCheck(1, null, "IMPORTANT");
+        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
+
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
+        verify(mEmailService, times(1)).setEmailBody(anyString());
+        verify(mEmailService, times(1)).failureCheck(1, null, "IMPORTANT");
+        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
+    }
+
+    @Test
+    void testProcessCustomerMessage_WithEmptyCustomerEcmID() {
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"customerEcmId\": \"24369121\"", "\"customerEcmId\": \"\"");
+
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
+
+        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
+
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
+        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
+    }
+
+    @Test
+    void testProcessCustomerMessage_ForExistingCustomers_With_AtgAccounts_FederalIdsAsTaxFedAndTaxNotFed_VmiLocations()
+            throws IOException, ECMException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload_WithAtgAcc_FederalId_VmiLocation.json");
+
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
+
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
 
         List<CustomerResupply> lResupplyLocations = new ArrayList<>();
 
         List<String> lPayloadStorages = new ArrayList<>();
 
+        boolean lIsSuccess = true;
+
         when(mCustomerRepository.findById(anyString())).thenReturn(Optional.of(lCustomer));
         when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
-        when(mCustomerResupplyRepository.saveAll(anyList())).thenReturn(lResupplyLocations);
-        boolean lIsSuccess = true;
-        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
         Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
-        Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
-        Mockito.doNothing().when(mCustomerMergeProcessor).mergeCustomer(any(Customer.class), anyList());
+        when(mCustomerResupplyRepository.saveAll(anyList())).thenReturn(lResupplyLocations);
         Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), anyString(), anyMap());
         Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
-
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
-        verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
-    }
-
-    @Test
-    void testProcessCustomerMessage_WithOneAtgAccount() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadModifiedWith1AtgAccount.json");
-
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
-
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-
-        Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
-
-        List<String> lPayloadStorages = null;
-
-        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
-        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
-        boolean lIsSuccess = false;
-        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
-        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
         Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
         Mockito.doNothing().when(mCustomerMergeProcessor).mergeCustomer(any(Customer.class), anyList());
-        Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
-        Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
+        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
+        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
+        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
+        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
 
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
+        verify(mCustomerAccountProcessor, times(1)).importWiseAccountsData(any(Customer.class), anyString(), anyMap());
+        verify(mAddressProcessor, times(1)).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
+        verify(mContactProcessor, times(1)).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
+        verify(mCustomerMergeProcessor, times(1)).mergeCustomer(any(Customer.class), anyList());
         verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
+        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
     }
 
     @Test
-    void testProcessCustomerMessage_ForElse_WithChangesInFields() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadModifiedWith1AtgAccount.json");
-        lPayLoad = lPayLoad.replace("\"atgSystemSrcId\": \"24369121\"", "\"atgSystemSrcId\": \"0000000\"");
-        lPayLoad = lPayLoad.replace("\"vmiLocations\": []", "\"vmiLocations\": null");
-        lPayLoad = lPayLoad.replace("\"wiseAccounts\": []", "\"wiseAccounts\": null");
-        lPayLoad = lPayLoad.replace("\"phoneType\": \"FX\"", "\"phoneType\": \"ANY\"");
-        lPayLoad = lPayLoad.replace("\"emailType\": \"ANY\"", "\"emailType\": \"\"");
-        lPayLoad = lPayLoad.replace("\"federalIds\": []", "\"federalIds\": null");
+    void testProcessCustomerMessage_ForNewCustomer_With_OneAtgAccount_AndEmpty_VmiLocation() throws IOException, ECMException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload_With1AtgAccount.json");
 
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
 
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
 
         List<String> lPayloadStorages = null;
 
+        boolean lIsSuccess = false;
+
         when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
         when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
-        boolean lIsSuccess = false;
-        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
         Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
+        Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
+        Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
         Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
         Mockito.doNothing().when(mCustomerMergeProcessor).mergeCustomer(any(Customer.class), anyList());
-        Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
-        Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
+        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
+        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
+        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
+        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
 
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
+        verify(mAddressProcessor, times(1)).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
+        verify(mContactProcessor, times(1)).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
+        verify(mCustomerMergeProcessor, times(1)).mergeCustomer(any(Customer.class), anyList());
         verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
+        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
     }
 
     @Test
-    void testProcessCustomerMessage_ForElse_WithEmptyOrNullChecks() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadModifiedWithNullOrEmptyCheck.json");
+    void testProcessCustomerMessage_ForCustomerWithNull_VmiLoc_WiseAcc__Phones_Emails_FederalId_AtgAcc() throws IOException, ECMException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload_With1AtgAccount_Null_VmiLoc_WiseAcc_Phones_Emails_FederalId_AtgAcc.json");
 
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
 
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
+
+        lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
 
         List<String> lPayloadStorages = null;
 
-        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
-        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
         boolean lIsSuccess = false;
-        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
+
+        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.of(lCustomer));
+        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
         Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
-        Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
         Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
         Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
-
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
-        verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
-    }
-
-    @Test
-    void testProcessCustomerMessage_WithEmptyCompanyNo_PhoneNo_NullEmails() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadModifiedWithNullEmailList.json");
-        lPayLoad = lPayLoad.replace("\"companyNumber\": \"00065\"", "\"companyNumber\": \"\"");
-        lPayLoad = lPayLoad.replace("\"phoneNumber\": \"4848889420\"", "\"phoneNumber\": \"\"");
-
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
-
-        Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
-
-        boolean lIsSuccess = true;
-
-        List<String> lPayloadStorages = null;
-        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
-        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
+        Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
+        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
         when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
         when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
         Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
-        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
 
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
-        verify(mEmailService, times(1)).getPayloadStorage();
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
+        verify(mAddressProcessor, times(1)).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
+        verify(mContactProcessor, times(1)).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
         verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
-
+        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
     }
 
     @Test
-    void testProcessCustomerMessage_HandlingException() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadModified.json");
-        lPayLoad = lPayLoad.replace("\"accountEcommerceStatus\": \"N\"", "\"accountEcommerceStatus\": \"Y\"");
+    void testProcessCustomerMessage_ForCustomerWithEmpty_Phones_Emails_FederalId_CompanyNoForWiseAccounts() throws IOException, ECMException {
+        String lListenerMessege = UtilityFile.readFile("customerPayload_WithEmpty_Phones_Emails_FederalId_CompanyNo.json");
 
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
+
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
+
+        List<String> lPayloadStorages = null;
+
+        boolean lIsSuccess = false;
 
         when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
         when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
         Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
+        Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
+        Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
+        Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
+        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
+        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
+        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
+        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
 
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
+        verify(mCustomerAccountProcessor, times(1)).importWiseAccountsData(any(Customer.class), anyString(), anyMap());
+        verify(mAddressProcessor, times(1)).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
+        verify(mContactProcessor, times(1)).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
+        verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
         verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
-        verify(mEmailService, times(1)).setEmailBody(anyString());
+    }
+
+    @Test
+    void testProcessCustomerMessage_WithHandlingException_ForMultipleWiseAccounts_WithAccECommStatus_Y() {
+        String lListenerMessege = UtilityFile.readFile("customerPayload_HandlingException_WithMultipleWiseAccounts_WithAccECommStatus_Y.json");
+
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
+
+        Customer lCustomer = new Customer();
+
+        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
+        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
+        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
+        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
+        Mockito.doNothing().when(mEmailService).setEmailSubject(anyString());
+        Mockito.doNothing().when(mEmailService).setEmailBody(anyString());
+        Mockito.doNothing().when(mEmailService).failureCheck(anyInt(), anyString(), anyString());
+        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
+
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
         verify(mEmailService, times(1)).failureCheck(anyInt(), anyString(), anyString());
-
+        verify(mEmailService, times(1)).setEmailBody(anyString());
+        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
     }
 
     @Test
-    void testProcessCustomerMessage_ForElse_WithEmptyOrNullChecksFederalId() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadModifiedWithNullOrEmptyCheck.json");
-        lPayLoad = lPayLoad.replace("\"federalIds\": []", "\"federalIds\": [\r\n" + "        {}\r\n" + "        ]");
+    void testProcessCustomerMessage_WithDeleteActionCode() {
+        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
 
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
-
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-
-        Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
+        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeadersWithDelete();
 
         List<String> lPayloadStorages = null;
 
-        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
-        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
         boolean lIsSuccess = false;
+
+        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
         when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
         Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
-        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
-        Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
-        Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
-        Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
 
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
+        mCustomerSubscriberService.processCustomerMessage(lListenerMessege, lMessageHeaders);
         verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
         verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
-    }
-
-    @Test
-    void testProcessCustomerMessage_ForElse_WithNullPhonesList() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyPhoneList.json");
-
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
-
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-
-        Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
-
-        List<String> lPayloadStorages = null;
-
-        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
-        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
-        boolean lIsSuccess = false;
-        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
-        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
-        Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
-        Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
-        Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
-
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
-        verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
-    }
-
-    @Test
-    void testProcessCustomerMessage_ForElse_WithEmptyPhones() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyPhoneList.json");
-        lPayLoad = lPayLoad.replace("\"phones\": null", "\"phones\": []");
-
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
-
-        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lPayLoad, CustomerMessageVO.class);
-
-        Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
-
-        List<String> lPayloadStorages = null;
-
-        when(mCustomerRepository.findById(anyString())).thenReturn(Optional.empty());
-        when(mCustomerRepository.save(any(Customer.class))).thenReturn(lCustomer);
-        when(mEmailConfig.getEnvironment()).thenReturn("env 1");
-        when(mEmailService.getPayloadStorage()).thenReturn(lPayloadStorages);
-        boolean lIsSuccess = false;
-        when(mEmailService.successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString())).thenReturn(lIsSuccess);
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
-        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(anyString());
-        Mockito.doNothing().when(mContactProcessor).createOrUpdateContacts(any(Customer.class), any(CustomerMessageVO.class));
-        Mockito.doNothing().when(mCustomerAccountProcessor).importWiseAccountsData(any(Customer.class), any(), any());
-        Mockito.doNothing().when(mAddressProcessor).importAddressesData(lCustomer, lCustomerMessageVO.getAddresses());
-
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
-        verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
-    }
-
-    @Test
-    void testProcessCustomerMessage_ForElse_WithEmptyCustomerEcmID() throws IOException, ECMException {
-        String lPayLoad = PayLoadReadFile.readFile("payLoadWithEmptyPhoneList.json");
-        lPayLoad = lPayLoad.replace("\"customerEcmId\": \"24369121\"", "\"customerEcmId\": \"\"");
-
-        Map<String, Object> lHeaders = new HashMap<>();
-        String lActionCode = "not_delete";
-        lHeaders.put("action_code", lActionCode);
-        MessageHeaders mMessageHeaders = new MessageHeaders(lHeaders);
-
-        Customer lCustomer = new Customer();
-        lCustomer.setPhone("12345665");
-
-        Mockito.doNothing().when(mCustomerAccountProcessor).setSubAccountCustomerNumbers(null);
-
-        mCustomerSubscriberService.processCustomerMessage(lPayLoad, mMessageHeaders);
-        verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
     }
 }
