@@ -101,8 +101,6 @@ public class CustomerMergeProcessorTest {
         lExistingCustomers.add(lCustomerMessageVO.getAtgAccounts().get(0));
 
         when(mCustomerRepository.findById(null)).thenReturn(Optional.empty());
-        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(null);
-        Mockito.doNothing().when(mCustomerAccountProcessor).resetCustomerAccountsData(anyString());
         mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers);
         verify(mCustomerRepository, times(1)).findById(null);
     }
