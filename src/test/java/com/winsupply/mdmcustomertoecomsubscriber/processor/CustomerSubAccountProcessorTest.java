@@ -26,16 +26,18 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CustomerSubAccountProcessorTest {
+
     @InjectMocks
-    CustomerSubAccountProcessor mCustomerSubAccountProcessor;
+    private CustomerSubAccountProcessor mCustomerSubAccountProcessor;
+
     @Mock
-    CustomerSubAccountRepository mCustomerSubAccountRepository;
+    private CustomerSubAccountRepository mCustomerSubAccountRepository;
+
     @Mock
-    AddressRepository mAddressRepository;
+    private AddressRepository mAddressRepository;
 
     @Test
     void testProcessSubAccountsData_SetSubAccAddress() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayloadProcessSubAccData.json");
         lListenerMessege = lListenerMessege.replace("\"addressLine2\": \"\"", "\"addressLine2\": \"W 12TH WC \"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -61,8 +63,8 @@ public class CustomerSubAccountProcessorTest {
     }
 
     @Test
-    void testProcessSubAccountsData_SetSubAccAddress_WithEmpty_FreightPercent_FreightCost_AndEmptyAddressLine2InSetSubAccountAddress() throws IOException {
-
+    void testProcessSubAccountsData_SetSubAccAddress_WithEmpty_FreightPercent_FreightCost_AndEmptyAddressLine2InSetSubAccountAddress()
+            throws IOException {
         String lListenerMessege = Utils.readFile("customerPayloadProcessSubAccData.json");
         lListenerMessege = lListenerMessege.replace("\"addressLine2\": \"\"", "\"addressLine2\": \"\"");
         lListenerMessege = lListenerMessege.replace("\"freightPercent\": \"0.00\"", "\"freightPercent\": \"\"");
@@ -91,7 +93,6 @@ public class CustomerSubAccountProcessorTest {
 
     @Test
     void testProcessSubAccountsData_SetSubAccAddress_WithTypeEmptyFieldIn_InSubAccountAddresses() throws IOException {
-
         String lListenerMessege = Utils.readFile("payLoad.json");
         lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -115,7 +116,6 @@ public class CustomerSubAccountProcessorTest {
 
     @Test
     void testProcessSubAccountsData_SetSubAccAddress_WithTypeBillTo_InSubAccountAddresses() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"Bill to\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -140,7 +140,6 @@ public class CustomerSubAccountProcessorTest {
 
     @Test
     void testProcessSubAccountsData_SetSubAccAddress_WithNullWiseSubAccount() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayloadwithWiseSubAccountAsNull.json");
         lListenerMessege = lListenerMessege.replace("\"addressLine2\": \"\"", "\"addressLine2\": \"W 12TH WC \"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -162,4 +161,5 @@ public class CustomerSubAccountProcessorTest {
         mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, lCustomer, lLocation);
         verify(mCustomerSubAccountRepository, times(1)).saveAll(anyList());
     }
+
 }

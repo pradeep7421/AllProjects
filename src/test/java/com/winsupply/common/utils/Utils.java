@@ -20,12 +20,12 @@ public class Utils {
     private static final Logger mLogger = LoggerFactory.getLogger(Utils.class);
 
     /**
-     * Reads File from FilePath
+     * <b>readFile</b> -Reads File from FilePath
      *
      * String pFilePath - the File path in String
      * @return - returns data in string
      */
-    public static final String readFile(final String pFilePath) {
+    public static String readFile(final String pFilePath) {
         String lContent = null;
         try {
             final File lFile = ResourceUtils.getFile("classpath:" + pFilePath);
@@ -37,11 +37,11 @@ public class Utils {
     }
 
     /**
-     * getMessageHeaders -Getting message headers
+     * <b>getMessageHeaders</b> -Getting message headers
      *
      * @return - MessageHeaders
      */
-    public static final MessageHeaders getMessageHeaders(final String pActionCode) {
+    public static MessageHeaders getMessageHeaders(final String pActionCode) {
         Map<String, Object> lHeaders = new HashMap<>();
         lHeaders.put("action_code", pActionCode);
         MessageHeaders lMessageHeaders = new MessageHeaders(lHeaders);

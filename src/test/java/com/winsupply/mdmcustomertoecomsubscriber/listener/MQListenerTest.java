@@ -26,7 +26,6 @@ class MQListenerTest {
 
     @Test
     void testReceiveEcomCustomerMdmMsg() {
-
         String lReadFileUtilityPayload = Utils.readFile("customerPayload.json");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
@@ -36,4 +35,5 @@ class MQListenerTest {
         mMQListener.receiveEcomCustomerMdmMsg(lMessage);
         verify(mCustomerSubscriberService, times(1)).processCustomerMessage((String) lMessage.getPayload(), lMessage.getHeaders());
     }
+
 }

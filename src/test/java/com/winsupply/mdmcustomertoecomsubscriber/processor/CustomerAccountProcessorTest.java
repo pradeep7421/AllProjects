@@ -40,24 +40,30 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CustomerAccountProcessorTest {
+
     @InjectMocks
-    CustomerAccountProcessor mCustomerAccountProcessor;
+    private CustomerAccountProcessor mCustomerAccountProcessor;
+
     @Mock
-    CustomerAccountRepository mCustomerAccountRepository;
+    private CustomerAccountRepository mCustomerAccountRepository;
+
     @Mock
-    CustomerSubAccountRepository mCustomerSubAccountRepository;
+    private CustomerSubAccountRepository mCustomerSubAccountRepository;
+
     @Mock
-    CustomerLocationRepository mCustomerLocationRepository;
+    private CustomerLocationRepository mCustomerLocationRepository;
+
     @Mock
-    CustomerAccountNumberRepository mCustomerAccountNumberRepository;
+    private CustomerAccountNumberRepository mCustomerAccountNumberRepository;
+
     @Mock
-    LocationRepository mLocationRepository;
+    private LocationRepository mLocationRepository;
+
     @Mock
-    CustomerSubAccountProcessor mCustomerSubAccountProcessor;
+    private CustomerSubAccountProcessor mCustomerSubAccountProcessor;
 
     @Test
     void testImportWiseAccountsData_ResetCustomerAccData_withNull_FilteredAccMap() throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -86,7 +92,6 @@ public class CustomerAccountProcessorTest {
 
     @Test
     void testImportWiseAccountsData_ResetCustomerAccDataWithEmpty_FilteredAccountMap() throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayloadWithAccountDetailsFieldsAndBlankfield.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -116,7 +121,6 @@ public class CustomerAccountProcessorTest {
 
     @Test
     void testImportWiseAccountsData_processFilteredAccounts_WithValidAndNonEmptyData() throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"interCompanyId\": \"\"", "\"interCompanyId\": \"00065\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -164,7 +168,6 @@ public class CustomerAccountProcessorTest {
     @Test
     void testImportWiseAccountsData_ExceptionForProcessFilteredAccounts_With2WiseAccounts_WithNull_InActiveCustomerSubAccounts_EmptyCustomerAccAttributes()
             throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload_WithEmpty_CustomerAccAttributes.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -205,7 +208,6 @@ public class CustomerAccountProcessorTest {
     @Test
     void testImportWiseAccountsData_ExceptionForProcessFilteredAccounts_withEmpty_OptionalLocationAnd_NullCustomersLocation()
             throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -244,7 +246,6 @@ public class CustomerAccountProcessorTest {
 
     @Test
     void testImportWiseAccountsData_withEmpty_InterCompanyId_ForInterCompanyMessege() throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload_WithEmpty_InterCompanyId.json");
         lListenerMessege = lListenerMessege.replace("\"interCompanyId\": \"00066\"", "\"interCompanyId\": \"\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -289,7 +290,6 @@ public class CustomerAccountProcessorTest {
     }
 
     private Customer createCustomer(final CustomerMessageVO pCustomerMessageVO, final String pCustomerECMId) {
-
         Customer lCustomer = new Customer();
         Location lLocation = new Location();
         lLocation.setCompanyNumber(pCustomerMessageVO.getWiseAccounts().get(0).getCompanyNumber());
@@ -300,7 +300,6 @@ public class CustomerAccountProcessorTest {
 
     private Location getFilteredAccountMap(final CustomerMessageVO pCustomerMessageVO, final Customer pCustomer, Location pLocation,
             final Map<String, Account> pFilteredAccountMap) {
-
         for (Account lAccount : pCustomerMessageVO.getWiseAccounts()) {
             String lCompanyNumber = lAccount.getCompanyNumber();
             pFilteredAccountMap.put(lCompanyNumber, lAccount);
@@ -313,4 +312,5 @@ public class CustomerAccountProcessorTest {
         }
         return pLocation;
     }
+
 }

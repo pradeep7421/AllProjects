@@ -23,14 +23,15 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class AddressProcessorTest {
+
     @InjectMocks
-    AddressProcessor mAddressProcessor;
+    private AddressProcessor mAddressProcessor;
+
     @Mock
-    AddressRepository mAddressRepository;
+    private AddressRepository mAddressRepository;
 
     @Test
     void testImportAddressesData_WithNullAddressesVo() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayLoadWithNullAddressesVo.json");
 
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -47,7 +48,6 @@ public class AddressProcessorTest {
 
     @Test
     void testImportAddressesData_WithEmptyAddressesVo() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayLoadWithNullAddressesVo.json");
         lListenerMessege = lListenerMessege.replace("\"subAccountAddresses\": null", "\"subAccountAddresses\": []");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -63,8 +63,7 @@ public class AddressProcessorTest {
     }
 
     @Test
-    void testImportAddressesData_SetCustomerShipAndBillAddressWithNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
-
+    void testImportAddressesData_SetCustomerShipAndBillAddress_WithNullCustDefault_Shipping_And_BillingAddress() throws IOException {
         String lListenerMessege = Utils.readFile("customerPayload.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -80,8 +79,7 @@ public class AddressProcessorTest {
     }
 
     @Test
-    void testImportAddressesData_SetCustomerShipAndBillAddressWithNonNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
-
+    void testImportAddressesData_SetCustomerShipAndBillAddressWith_NonNullCustDefaultShipping_And_BillingAddress() throws IOException {
         String lListenerMessege = Utils.readFile("customerPayload.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -107,7 +105,6 @@ public class AddressProcessorTest {
 
     @Test
     void testImportAddressesData_SetCustomerShipAndBillAddressWithEmpty_ShipTo_ForSetBillingAddress() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
@@ -127,7 +124,6 @@ public class AddressProcessorTest {
 
     @Test
     void testImportAddressesData_SetCustomerShipAndBillAddressWithTypeEmptyAddressVo_InAddressesVoList() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayloadWithEmptyAddressVoObjectWithNullValues.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         List<Address> lAddresses = new ArrayList<>();
@@ -141,4 +137,5 @@ public class AddressProcessorTest {
         mAddressProcessor.importAddressesData(lCustomer, lAddressesVO);
         verify(mAddressRepository, times(0)).save(any(Address.class));
     }
+
 }

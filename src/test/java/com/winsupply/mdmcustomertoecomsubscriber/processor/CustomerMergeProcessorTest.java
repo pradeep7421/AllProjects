@@ -38,28 +38,36 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CustomerMergeProcessorTest {
+
     @InjectMocks
-    CustomerMergeProcessor mCustomerMergeProcessor;
+    private CustomerMergeProcessor mCustomerMergeProcessor;
+
     @Mock
-    QuoteRepository mQuoteRepository;
+    private QuoteRepository mQuoteRepository;
+
     @Mock
-    ListGroupRepository mListGroupRepository;
+    private ListGroupRepository mListGroupRepository;
+
     @Mock
-    ListToCustomerRepository mListToCustomerRepository;
+    private ListToCustomerRepository mListToCustomerRepository;
+
     @Mock
-    ContactRepository mContactRepository;
+    private ContactRepository mContactRepository;
+
     @Mock
-    CustomerRepository mCustomerRepository;
+    private CustomerRepository mCustomerRepository;
+
     @Mock
-    CustomerResupplyRepository mCustomerResupplyRepository;
+    private CustomerResupplyRepository mCustomerResupplyRepository;
+
     @Mock
-    OrderRepository mOrderRepository;
+    private OrderRepository mOrderRepository;
+
     @Mock
-    CustomerAccountProcessor mCustomerAccountProcessor;
+    private CustomerAccountProcessor mCustomerAccountProcessor;
 
     @Test
     void testMergeCustomer_handlingException_WhileDeleting_ExistingCustomer() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
                 + "      \"atgSystemSrcId\":null,\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
@@ -81,7 +89,6 @@ public class CustomerMergeProcessorTest {
 
     @Test
     void testMergeCustomer_ForCustomerNotExistingInDB_WhileDeleting_ExistingCustomer() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
                 + "      \"atgSystemSrcId\":null,\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
@@ -102,7 +109,6 @@ public class CustomerMergeProcessorTest {
 
     @Test
     void testMergeCustomer_ForExistingCustomerInDb() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
                 + "      \"atgSystemSrcId\":\"24369121\",\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
@@ -162,7 +168,6 @@ public class CustomerMergeProcessorTest {
 
     @Test
     void testMergeCustomer_ForExistingCustomerInDb_WithEmpty_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
                 + "      \"atgSystemSrcId\":\"24369121\",\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
@@ -200,7 +205,6 @@ public class CustomerMergeProcessorTest {
 
     @Test
     void testMergeCustomer_ForExistingCustomerInDb_WithNull_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
                 + "      \"atgSystemSrcId\":\"24369121\",\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
@@ -235,4 +239,5 @@ public class CustomerMergeProcessorTest {
         verify(mOrderRepository, times(1)).findAllByCustomerCustomerECMId(anyString());
         verify(mCustomerRepository, times(1)).deleteById(anyString());
     }
+
 }

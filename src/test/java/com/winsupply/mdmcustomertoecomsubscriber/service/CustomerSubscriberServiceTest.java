@@ -40,6 +40,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerSubscriberServiceTest {
+
     @InjectMocks
     private CustomerSubscriberService mCustomerSubscriberService;
 
@@ -71,11 +72,10 @@ class CustomerSubscriberServiceTest {
     private TimerTask mTimerTask;
 
     @Mock
-    ContactProcessor mContactProcessor;
+    private ContactProcessor mContactProcessor;
 
     @Test
     void testInitialize() {
-
         List<String> lMailTos = new ArrayList<>();
         when(mEmailConfig.getMailTos()).thenReturn(lMailTos);
         when(mEmailConfig.getHost()).thenReturn("host created");
@@ -89,19 +89,11 @@ class CustomerSubscriberServiceTest {
         mCustomerSubscriberService.initialize();
         verify(mEmailConfig, times(1)).getBatchSize();
         verify(mEmailConfig, times(2)).getTimePeriod();
-        verify(mEmailService, times(0)).initializeTimerTask();
-    }
-
-    @BeforeEach
-    void setEmail() {
-        ReflectionTestUtils.setField(mCustomerSubscriberService, "mEmailService", mEmailService);
     }
 
     @Test
     void testProcessCustomerMessage_Exception_WithInvalidPayload() {
-
         String lListenerMessege = Utils.readFile("customerPayload_Invalid.json");
-        lListenerMessege = lListenerMessege.replace("\"accountEcommerceStatus\": \"N\"", "\"accountEcommerceStatus\": \"Y\"");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
 
@@ -119,7 +111,6 @@ class CustomerSubscriberServiceTest {
 
     @Test
     void testProcessCustomerMessage_WithEmptyCustomerEcmID() {
-
         String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"customerEcmId\": \"24369121\"", "\"customerEcmId\": \"\"");
 
@@ -134,7 +125,6 @@ class CustomerSubscriberServiceTest {
     @Test
     void testProcessCustomerMessage_ForExistingCustomersUpdating_With_AtgAccounts_FederalIdsAsTaxFedAndTaxNotFed_VmiLocations()
             throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload_WithAtgAcc_FederalId_VmiLocation.json");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
@@ -173,7 +163,6 @@ class CustomerSubscriberServiceTest {
 
     @Test
     void testProcessCustomerMessage_NewCustomerCreating_With_OneAtgAccount_AndEmpty_VmiLocation() throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload_With1AtgAccount.json");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
@@ -209,7 +198,6 @@ class CustomerSubscriberServiceTest {
     @Test
     void testProcessCustomerMessage_ForExistingCustomerUpdating_WithNull_VmiLoc_WiseAcc__Phones_Emails_FederalId_AtgAcc()
             throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload_With1AtgAccount_Null_VmiLoc_WiseAcc_Phones_Emails_FederalId_AtgAcc.json");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
@@ -245,7 +233,6 @@ class CustomerSubscriberServiceTest {
     @Test
     void testProcessCustomerMessage_NewCustomerCreating_WithEmpty_Phones_Emails_FederalId_CompanyNoForWiseAccounts()
             throws IOException, ECMException {
-
         String lListenerMessege = Utils.readFile("customerPayload_WithEmpty_Phones_Emails_FederalId_CompanyNo.json");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
@@ -280,7 +267,6 @@ class CustomerSubscriberServiceTest {
 
     @Test
     void testProcessCustomerMessage_ExceptionForCreatingNewCustomer_ForMultipleWiseAccounts_WithAccECommStatus_Y() {
-
         String lListenerMessege = Utils.readFile("customerPayload_HandlingException_WithMultipleWiseAccounts_WithAccECommStatus_Y.json");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
@@ -304,8 +290,7 @@ class CustomerSubscriberServiceTest {
 
     @Test
     void testProcessCustomerMessage_ToDeleteCustomerWith_DeleteActionCode() {
-
-        String lListenerMessege = Utils.readFile("customerPayload.json");
+        String lListenerMessege = Utils.readFile("customerPayloadWithOnlyCustomerEcmId.json");
 
         MessageHeaders lMessageHeaders = Utils.getMessageHeaders("delete");
 
@@ -321,4 +306,10 @@ class CustomerSubscriberServiceTest {
         verify(mCustomerAccountProcessor, times(1)).setSubAccountCustomerNumbers(null);
         verify(mEmailService, times(1)).successCheck(anyInt(), anyInt(), anyString(), anyString(), anyString(), anyString());
     }
+
+    @BeforeEach
+    void setEmail() {
+        ReflectionTestUtils.setField(mCustomerSubscriberService, "mEmailService", mEmailService);
+    }
+
 }
