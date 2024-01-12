@@ -1,6 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
-import com.winsupply.common.utils.UtilityFile;
+import com.winsupply.common.utils.Utils;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
@@ -30,7 +30,8 @@ public class AddressProcessorTest {
 
     @Test
     void testImportAddressesData_WithNullAddressesVo() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoadWithNullAddressesVo.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoadWithNullAddressesVo.json");
 
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -46,7 +47,8 @@ public class AddressProcessorTest {
 
     @Test
     void testImportAddressesData_WithEmptyAddressesVo() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoadWithNullAddressesVo.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoadWithNullAddressesVo.json");
         lListenerMessege = lListenerMessege.replace("\"subAccountAddresses\": null", "\"subAccountAddresses\": []");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -61,8 +63,9 @@ public class AddressProcessorTest {
     }
 
     @Test
-    void testImportAddressesData_WithNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+    void testImportAddressesData_SetCustomerShipAndBillAddressWithNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
@@ -77,8 +80,9 @@ public class AddressProcessorTest {
     }
 
     @Test
-    void testImportAddressesData_WithNonNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+    void testImportAddressesData_SetCustomerShipAndBillAddressWithNonNull_CustDefault_Shipping_And_BillingAddress() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         List<AddressVO> lAddressesVO = lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountAddresses();
@@ -102,8 +106,9 @@ public class AddressProcessorTest {
     }
 
     @Test
-    void testImportAddressesData_WithEmpty_ShipTo_ForSetBillingAddress() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+    void testImportAddressesData_SetCustomerShipAndBillAddressWithEmpty_ShipTo_ForSetBillingAddress() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         List<Address> lAddresses = new ArrayList<>();
@@ -121,8 +126,9 @@ public class AddressProcessorTest {
     }
 
     @Test
-    void testImportAddressesData_WithTypeEmptyAddressVo_InAddressesVoList() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyAddressVoObjectWithNullValues.json");
+    void testImportAddressesData_SetCustomerShipAndBillAddressWithTypeEmptyAddressVo_InAddressesVoList() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayloadWithEmptyAddressVoObjectWithNullValues.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         List<Address> lAddresses = new ArrayList<>();
         Address lAddress = new Address();

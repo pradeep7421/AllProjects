@@ -1,7 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.listener;
 
-import com.winsupply.common.utils.MessageHeadersCall;
-import com.winsupply.common.utils.UtilityFile;
+import com.winsupply.common.utils.Utils;
 import com.winsupply.mdmcustomertoecomsubscriber.service.CustomerSubscriberService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +17,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class MQListenerTest {
+
     @InjectMocks
     private MQListener mMQListener;
 
@@ -26,9 +26,10 @@ class MQListenerTest {
 
     @Test
     void testReceiveEcomCustomerMdmMsg() {
-        String lReadFileUtilityPayload = UtilityFile.readFile("customerPayload.json");
 
-        MessageHeaders lMessageHeaders = MessageHeadersCall.getMessageHeaders();
+        String lReadFileUtilityPayload = Utils.readFile("customerPayload.json");
+
+        MessageHeaders lMessageHeaders = Utils.getMessageHeaders("update");
 
         Mockito.doNothing().when(mCustomerSubscriberService).processCustomerMessage(lReadFileUtilityPayload, lMessageHeaders);
         Message<?> lMessage = new GenericMessage<>(lReadFileUtilityPayload, lMessageHeaders);

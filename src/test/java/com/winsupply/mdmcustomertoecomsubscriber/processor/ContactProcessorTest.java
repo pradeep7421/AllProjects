@@ -1,6 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
-import com.winsupply.common.utils.UtilityFile;
+import com.winsupply.common.utils.Utils;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
@@ -93,7 +93,8 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactsInPayLoad() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+
+        String lListenerMessege = Utils.readFile("customerPayloadWithEmptyContacts.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         List<Contact> lContacts = new ArrayList<>();
@@ -108,7 +109,8 @@ public class ContactProcessorTest {
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactsFromCustomerMessageVO_AndWithNonEmpty_ContactsfromDB_Quotes_ListGroups_Orders()
             throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+
+        String lListenerMessege = Utils.readFile("customerPayloadWithEmptyContacts.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
@@ -150,7 +152,8 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyQuotes_ListGroups_Order_NonEmptyContactsfromDB() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+
+        String lListenerMessege = Utils.readFile("customerPayloadWithEmptyContacts.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
@@ -186,7 +189,8 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactsInCustomerMessegeVo_AndWithQuotes_ListGroups_As_Null() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayloadWithEmptyContacts.json");
+
+        String lListenerMessege = Utils.readFile("customerPayloadWithEmptyContacts.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
@@ -222,7 +226,8 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithContactsInPayLoadAndDB() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc_123\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -257,12 +262,12 @@ public class ContactProcessorTest {
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mOrderRepository, times(1)).findAllByApproverContactContactECMId(anyString());
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactsInDB() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         Customer lCustomer = new Customer();
@@ -281,12 +286,12 @@ public class ContactProcessorTest {
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mCustomerAccountProcessor, times(1)).getSubAccountCustomerNumbers();
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithNoneContactsToDeleteFromDbAndInvalidEmail() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -315,12 +320,12 @@ public class ContactProcessorTest {
         verify(mContactLocationPreferenceRepository, times(1))
                 .findByIdContactECMIdAndIdPreferenceName(lCustomerMessageVO.getContacts().get(0).getContactEcmId(), "defaultJob");
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithNonEmptyContactsInDBAndValidEmail() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -351,12 +356,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyLastName() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"firstName\": \"lou\"", "\"firstName\": \"lou\"");
         lListenerMessege = lListenerMessege.replace("\"lastName\": \"raymond\"", "\"lastName\": \"\"");
@@ -378,7 +383,8 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyFirstNameAndLastName() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"firstName\": \"lou\"", "\"firstName\": \"\"");
         lListenerMessege = lListenerMessege.replace("\"lastName\": \"raymond\"", "\"lastName\": \"\"");
@@ -396,12 +402,12 @@ public class ContactProcessorTest {
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mCustomerAccountProcessor, times(1)).getSubAccountCustomerNumbers();
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithEcomStatusAsY() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
         lListenerMessege = lListenerMessege.replace("\"interCompanyId\": \"\"", "\"interCompanyId\": \"2001\"");
@@ -437,12 +443,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyOptionalContact() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
         lListenerMessege = lListenerMessege.replace("\"interCompanyId\": \"\"", "\"interCompanyId\": \"2001\"");
@@ -478,12 +484,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithNonNullAddress() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
 
         lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
@@ -541,12 +547,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyOptionalEmailPrefrence() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
         lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
@@ -601,12 +607,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithNullCommunicationPrefrence() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
         lListenerMessege = lListenerMessege.replace("\"contactECommerceStatus\": \"N\"", "\"contactECommerceStatus\": \"Y\"");
@@ -655,12 +661,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithAddressAsNull() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
         lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": \"industry A ,industry B\"");
@@ -712,12 +718,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithAddressAndEmptyOptionalIndustry() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayLoad.json");
+
+        String lListenerMessege = Utils.readFile("customerPayLoad.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
 
@@ -769,12 +775,12 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 
     @Test
     void testCreateOrUpdateContacts_WithNullContactEmail_ContactPhones_Industries() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("payLoadWithNullContactEmailContactPhones.json");
+
+        String lListenerMessege = Utils.readFile("customerPayloadWithNullContactEmailContactPhones.json");
         lListenerMessege = lListenerMessege.replace("\"userId\": \"\"", "\"userId\": \"abc123@xyz.com\"");
         lListenerMessege = lListenerMessege.replace("\"emailType\": \"EW\"", "\"emailType\": \"ON-EMAIL\"");
         lListenerMessege = lListenerMessege.replace("\"industries\": \"\"", "\"industries\": null");
@@ -822,7 +828,8 @@ public class ContactProcessorTest {
 
     @Test
     void testCreateOrUpdateContacts_WithEmptyContactEmail_ContactPhones() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayoadWithEmptyContactEmailContactPhonesfields.json");
+
+        String lListenerMessege = Utils.readFile("customerPayoadWithEmptyContactEmailContactPhonesfields.json");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
         List<String> lSubAccountCustomerNumbers = new ArrayList<>();
@@ -868,6 +875,5 @@ public class ContactProcessorTest {
 
         mContactProcessor.createOrUpdateContacts(lCustomer, lCustomerMessageVO);
         verify(mContactRepository, times(1)).findByCustomerCustomerECMId(anyString());
-
     }
 }

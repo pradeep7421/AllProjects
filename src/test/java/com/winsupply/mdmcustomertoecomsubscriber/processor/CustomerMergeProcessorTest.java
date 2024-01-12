@@ -1,6 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
-import com.winsupply.common.utils.UtilityFile;
+import com.winsupply.common.utils.Utils;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Contact;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
@@ -59,9 +59,10 @@ public class CustomerMergeProcessorTest {
 
     @Test
     void testMergeCustomer_handlingException_WhileDeleting_ExistingCustomer() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
-        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":null,\r\n"
-                + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
+                + "      \"atgSystemSrcId\":null,\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
 
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
 
@@ -79,10 +80,32 @@ public class CustomerMergeProcessorTest {
     }
 
     @Test
-    void testMergeCustomer() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
-        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
-                + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
+    void testMergeCustomer_ForCustomerNotExistingInDB_WhileDeleting_ExistingCustomer() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
+                + "      \"atgSystemSrcId\":null,\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
+
+        CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
+        Customer lCustomer = new Customer();
+        lCustomer.setCustomerECMId("243612222");
+        List<AtgAccount> lExistingCustomers = new ArrayList<>();
+        lExistingCustomers.add(lCustomerMessageVO.getAtgAccounts().get(0));
+
+        when(mCustomerRepository.findById(null)).thenReturn(Optional.empty());
+        Mockito.doNothing().when(mCustomerResupplyRepository).deleteAllByCustomerECMId(null);
+        Mockito.doNothing().when(mCustomerAccountProcessor).resetCustomerAccountsData(anyString());
+        mCustomerMergeProcessor.mergeCustomer(lCustomer, lExistingCustomers);
+        verify(mCustomerRepository, times(1)).findById(null);
+    }
+
+    @Test
+    void testMergeCustomer_ForExistingCustomerInDb() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
+                + "      \"atgSystemSrcId\":\"24369121\",\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
 
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         String lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();
@@ -138,10 +161,11 @@ public class CustomerMergeProcessorTest {
     }
 
     @Test
-    void testMergeCustomer_WithEmpty_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
-        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
-                + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
+    void testMergeCustomer_ForExistingCustomerInDb_WithEmpty_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
+                + "      \"atgSystemSrcId\":\"24369121\",\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
 
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         String lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();
@@ -175,10 +199,11 @@ public class CustomerMergeProcessorTest {
     }
 
     @Test
-    void testMergeCustomer_WithNull_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
-        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n" + "      \"atgSystemSrcId\":\"24369121\",\r\n"
-                + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
+    void testMergeCustomer_ForExistingCustomerInDb_WithNull_Contacts_Quotes_ListGroups_ListsToCustomer_Orders() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"atgAccounts\": []", "\"atgAccounts\": [\r\n" + "        {\r\n"
+                + "      \"atgSystemSrcId\":\"24369121\",\r\n" + "      \"type\":\"Type A\" \r\n" + "        }\r\n" + "    ]");
 
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
         String lCustomerECMId = lCustomerMessageVO.getCustomerEcmId();

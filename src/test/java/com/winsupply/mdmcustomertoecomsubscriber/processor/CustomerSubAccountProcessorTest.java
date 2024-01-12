@@ -1,6 +1,6 @@
 package com.winsupply.mdmcustomertoecomsubscriber.processor;
 
-import com.winsupply.common.utils.UtilityFile;
+import com.winsupply.common.utils.Utils;
 import com.winsupply.mdmcustomertoecomsubscriber.common.Utility;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Address;
 import com.winsupply.mdmcustomertoecomsubscriber.entities.Customer;
@@ -34,45 +34,55 @@ public class CustomerSubAccountProcessorTest {
     AddressRepository mAddressRepository;
 
     @Test
-    void testProcessSubAccountsData() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayloadProcessSubAccData.json");
+    void testProcessSubAccountsData_SetSubAccAddress() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayloadProcessSubAccData.json");
         lListenerMessege = lListenerMessege.replace("\"addressLine2\": \"\"", "\"addressLine2\": \"W 12TH WC \"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
         Account lAccount = lCustomerMessageVO.getWiseAccounts().get(0);
+
         List<String> pInActiveCustomerSubAccounts = new ArrayList<>();
         pInActiveCustomerSubAccounts.add(lCustomerMessageVO.getWiseAccounts().get(0).getCompanyNumber() + "-"
                 + lCustomerMessageVO.getWiseAccounts().get(0).getWiseSubAccounts().get(0).getSubAccountNumber());
+
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
 
         Location lLocation = new Location();
         lLocation.setCompanyNumber(lCustomerMessageVO.getWiseAccounts().get(0).getCompanyNumber());
+
         Address lAddress = new Address();
+
         when(mAddressRepository.save(any(Address.class))).thenReturn(lAddress);
         mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, lCustomer, lLocation);
         verify(mAddressRepository, times(1)).save(any(Address.class));
         verify(mCustomerSubAccountRepository, times(1)).saveAll(anyList());
-
     }
 
     @Test
-    void testProcessSubAccountsData_WithEmpty_FreightPercent_FreightCost_AndEmptyAddressLine2InSetSubAccountAddress() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayloadProcessSubAccData.json");
+    void testProcessSubAccountsData_SetSubAccAddress_WithEmpty_FreightPercent_FreightCost_AndEmptyAddressLine2InSetSubAccountAddress() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayloadProcessSubAccData.json");
         lListenerMessege = lListenerMessege.replace("\"addressLine2\": \"\"", "\"addressLine2\": \"\"");
         lListenerMessege = lListenerMessege.replace("\"freightPercent\": \"0.00\"", "\"freightPercent\": \"\"");
         lListenerMessege = lListenerMessege.replace("\"freightCost\": \"0.00\"", "\"freightCost\": \"\"");
         lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"Ship to\"");
-
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
         Account lAccount = lCustomerMessageVO.getWiseAccounts().get(0);
+
         List<String> pInActiveCustomerSubAccounts = new ArrayList<>();
         pInActiveCustomerSubAccounts.add("");
+
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
 
         Location lLocation = new Location();
         lLocation.setCompanyNumber(lCustomerMessageVO.getWiseAccounts().get(0).getCompanyNumber());
+
         Address lAddress = new Address();
+
         when(mAddressRepository.save(any(Address.class))).thenReturn(lAddress);
         mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, lCustomer, lLocation);
         verify(mAddressRepository, times(1)).save(any(Address.class));
@@ -80,58 +90,74 @@ public class CustomerSubAccountProcessorTest {
     }
 
     @Test
-    void testProcessSubAccountsData_WithTypeEmptyIn_InSubAccountAddresses() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("payLoad.json");
-        lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"\"");
+    void testProcessSubAccountsData_SetSubAccAddress_WithTypeEmptyFieldIn_InSubAccountAddresses() throws IOException {
 
+        String lListenerMessege = Utils.readFile("payLoad.json");
+        lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
         Account lAccount = lCustomerMessageVO.getWiseAccounts().get(0);
+
         List<String> pInActiveCustomerSubAccounts = null;
+
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
 
         Location lLocation = new Location();
         lLocation.setCompanyNumber(lCustomerMessageVO.getWiseAccounts().get(0).getCompanyNumber());
+
         Address lAddress = new Address();
+
         when(mAddressRepository.save(any(Address.class))).thenReturn(lAddress);
         mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, lCustomer, lLocation);
         verify(mCustomerSubAccountRepository, times(1)).saveAll(anyList());
     }
 
     @Test
-    void testProcessSubAccountsData_WithTypeBillTo_InSubAccountAddresses() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("customerPayload.json");
-        lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"Bill to\"");
+    void testProcessSubAccountsData_SetSubAccAddress_WithTypeBillTo_InSubAccountAddresses() throws IOException {
 
+        String lListenerMessege = Utils.readFile("customerPayload.json");
+        lListenerMessege = lListenerMessege.replace("\"type\": \"Ship to\"", "\"type\": \"Bill to\"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
         Account lAccount = lCustomerMessageVO.getWiseAccounts().get(0);
+
         List<String> pInActiveCustomerSubAccounts = new ArrayList<>();
         pInActiveCustomerSubAccounts.add("");
+
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
 
         Location lLocation = new Location();
         lLocation.setCompanyNumber(lCustomerMessageVO.getWiseAccounts().get(0).getCompanyNumber());
+
         Address lAddress = new Address();
+
         when(mAddressRepository.save(any(Address.class))).thenReturn(lAddress);
         mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, lCustomer, lLocation);
         verify(mCustomerSubAccountRepository, times(1)).saveAll(anyList());
     }
 
     @Test
-    void testProcessSubAccountsDataWithNullWiseSubAccount() throws IOException {
-        String lListenerMessege = UtilityFile.readFile("payLoadwithWiseSubAccountAsNull.json");
+    void testProcessSubAccountsData_SetSubAccAddress_WithNullWiseSubAccount() throws IOException {
+
+        String lListenerMessege = Utils.readFile("customerPayloadwithWiseSubAccountAsNull.json");
         lListenerMessege = lListenerMessege.replace("\"addressLine2\": \"\"", "\"addressLine2\": \"W 12TH WC \"");
         CustomerMessageVO lCustomerMessageVO = Utility.unmarshallData(lListenerMessege, CustomerMessageVO.class);
+
         Account lAccount = lCustomerMessageVO.getWiseAccounts().get(0);
+
         List<String> pInActiveCustomerSubAccounts = new ArrayList<>();
         pInActiveCustomerSubAccounts.add("");
+
         Customer lCustomer = new Customer();
         lCustomer.setCustomerECMId(lCustomerMessageVO.getCustomerEcmId());
 
         Location lLocation = new Location();
         lLocation.setCompanyNumber(lCustomerMessageVO.getWiseAccounts().get(0).getCompanyNumber());
+
         Address lAddress = new Address();
+
         when(mAddressRepository.save(any(Address.class))).thenReturn(lAddress);
         mCustomerSubAccountProcessor.processSubAccountsData(lAccount, pInActiveCustomerSubAccounts, lCustomer, lLocation);
         verify(mCustomerSubAccountRepository, times(1)).saveAll(anyList());
