@@ -28,6 +28,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -83,13 +85,13 @@ class OrderControllerTest {
     @Test
     void testCreateOrder() throws Exception, Exception {
         OrderRequest lOrderRequest = new OrderRequest();
-        lOrderRequest.setOrderName("new order");
-        lOrderRequest.setAmount(10.10);
+        lOrderRequest.setOrderName("my order");
+        lOrderRequest.setAmount(56.10);
 
         List<OrderLineRequest> lOrderLines = new ArrayList<>();
         OrderLineRequest lOrderLineRequest = new OrderLineRequest();
-        lOrderLineRequest.setItemName("gold");
-        lOrderLineRequest.setQuantity(10);
+        lOrderLineRequest.setItemName("charger");
+        lOrderLineRequest.setQuantity(11);
         lOrderLines.add(lOrderLineRequest);
 
         lOrderRequest.setOrderLines(lOrderLines);
@@ -147,7 +149,7 @@ class OrderControllerTest {
         int lOrderId = 1;
         String lUserAgent = "Mozilla/5.0 (iPhone; U; ru; CPU iPhone OS 4_2_1 like Mac OS X; ru) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148a Safari/6533.18.5";
 
-        when(mOrderService.getOrderDetails(lOrderId, lUserAgent)).thenReturn(Optional.of(new Order()));
+        when(mOrderService.getOrderDetails(anyInt(), anyString())).thenReturn(Optional.of(new Order()));
 
         mMockMvc.perform(MockMvcRequestBuilders.get(Constants.GET_URL, lOrderId).header(Constants.USER_AGENT, lUserAgent)
                 .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)).andExpect(MockMvcResultMatchers.status().isOk());

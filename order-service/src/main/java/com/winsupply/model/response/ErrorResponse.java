@@ -25,8 +25,7 @@ public class ErrorResponse {
      */
     private String errorMessage;
     /**
-     * The listMap takes values of type List
+     * The fieldErrors takes values of type List
      */
-    private List<Map<String, String>> listMap;
-
+    private List<Map<String, String>> fieldErrors;
 }

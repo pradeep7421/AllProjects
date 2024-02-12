@@ -42,6 +42,7 @@ public class PromotionService {
      * @return - The ResponseEntity details for the called api
      */
     public ResponseEntity<String> getPromotionDetails(String pUserAgent, double pOrderAmount) {
+
         ResponseEntity<String> lResponseEntity = mWebClient.get().uri(Constants.BASE_URL + Constants.URL_FOR_GET + pOrderAmount)
                 .header(Constants.USER_AGENT, pUserAgent).retrieve().toEntity(String.class).block();
 

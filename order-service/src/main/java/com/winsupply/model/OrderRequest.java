@@ -1,7 +1,6 @@
 package com.winsupply.model;
 
 import com.winsupply.constants.Constants;
-
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

@@ -2,14 +2,12 @@ package com.winsupply.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.winsupply.constants.Constants;
 import com.winsupply.entity.Order;
 import com.winsupply.entity.OrderLine;
 import com.winsupply.globalexception.DataNotFoundException;
 import com.winsupply.model.OrderLineRequest;
 import com.winsupply.model.OrderRequest;
-import com.winsupply.promotion.PromotionResponse;
 import com.winsupply.repository.OrderLineRepository;
 import com.winsupply.repository.OrderRepository;
 import java.util.ArrayList;
@@ -21,11 +19,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 /**
  * The {@code OrderService} class provides business logic for managing orders
+ * 
  * @author PRADEEP
  */
 @Service
@@ -100,16 +98,16 @@ public class OrderService {
         Optional<Order> lOrderOptional = mOrderRepository.findById(pOrderId);
 
         if (lOrderOptional.isPresent()) {
-            Order lOrder = lOrderOptional.get();
-            ResponseEntity<String> lResponseEntity = mPromotionService.getPromotionDetails(pUserAgent, lOrder.getAmount());
-
-            PromotionResponse lPromotionResponse = new ObjectMapper().readValue(lResponseEntity.getBody(), PromotionResponse.class);
-            Double lAmountBeforeDiscount = lOrder.getAmount();
-            Double lAmountAfterDiscount = lAmountBeforeDiscount - lPromotionResponse.getData().getFinalDiscountAmount();
-            lOrderOptional.get().setAmount(lAmountAfterDiscount);
-
-            mLogger.info("PromotionResponse: {},ResponseEntity body: {}, ResponseEntity status code: {},", lPromotionResponse,
-                    lResponseEntity.getBody(), lResponseEntity.getStatusCode());
+//            Order lOrder = lOrderOptional.get();
+//            ResponseEntity<String> lResponseEntity = mPromotionService.getPromotionDetails(pUserAgent, lOrder.getAmount());
+//
+//            PromotionResponse lPromotionResponse = new ObjectMapper().readValue(lResponseEntity.getBody(), PromotionResponse.class);
+//            Double lAmountBeforeDiscount = lOrder.getAmount();
+//            Double lAmountAfterDiscount = lAmountBeforeDiscount - lPromotionResponse.getData().getFinalDiscountAmount();
+//            lOrderOptional.get().setAmount(lAmountAfterDiscount);
+//
+//            mLogger.info("PromotionResponse: {},ResponseEntity body: {}, ResponseEntity status code: {},", lPromotionResponse,
+//                    lResponseEntity.getBody(), lResponseEntity.getStatusCode());
             return lOrderOptional;
         } else {
             mLogger.debug("Exiting getOrderDetails method");

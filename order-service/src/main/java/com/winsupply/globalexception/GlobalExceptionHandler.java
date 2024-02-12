@@ -3,11 +3,14 @@ package com.winsupply.globalexception;
 import com.winsupply.constants.Constants;
 import com.winsupply.model.response.ErrorResponse;
 import com.winsupply.model.response.SuccessResponse;
+
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.UnexpectedTypeException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,7 @@ import org.springframework.web.reactive.result.method.annotation.ResponseEntityE
 /**
  * The {@code GlobalExceptionHandler} class is a centralized exception handler
  * for handling custom exceptions and mapping them to appropriate HTTP responses
+ * 
  * @author PRADEEP
  */
 @RestControllerAdvice
@@ -60,7 +64,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                     return lErrorsMap;
                 }).toList();
         mLogger.error(pException.getMessage(), pException);
-        return new ResponseEntity<>(new ErrorResponse(false, Constants.REQUEST_VALIDATION_ERRORS, lFiledValidationErrors), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<ErrorResponse>(new ErrorResponse(false, Constants.REQUEST_VALIDATION_ERRORS, lFiledValidationErrors),
+                HttpStatus.BAD_GATEWAY);
     }
 
     /**

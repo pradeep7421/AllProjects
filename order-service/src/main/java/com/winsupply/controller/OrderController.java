@@ -132,7 +132,7 @@ public class OrderController {
      */
     @GetMapping
     public ResponseEntity<Object> getAllOrdersByPagination(@RequestParam(name = "page", defaultValue = "1") @Min(1) Integer pPageNo,
-            @RequestParam(name = "rpp", defaultValue = "10") @Min(0) Integer pResultsPerPage,
+            @RequestParam(name = "rpp", defaultValue = "3") @Min(0) Integer pResultsPerPage,
             @RequestParam(name = "sortBy", defaultValue = "orderId") @Pattern(regexp = Constants.SORT_BY_REGEX_EXP) String pSortBy,
             @RequestParam(name = "sortOrder", defaultValue = "asc") @Pattern(regexp = Constants.SORT_ORDER_REGEX_EXP) String pSortOrder) {
 
